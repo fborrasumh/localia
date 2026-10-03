@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0F2237">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data: blob:; media-src blob: data:; connect-src https://api.openai.com https://generativelanguage.googleapis.com https://api.anthropic.com http://localhost:11434 http://127.0.0.1:11434 https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com https://cdn.jsdelivr.net; worker-src blob: https://cdnjs.cloudflare.com; base-uri 'none'; form-action 'none'">
+<meta name="author" content="Fernando Borrás Rocher">
+<meta name="description" content="Modelo local o API: qué tarea de investigación necesita cada uno">
+<title>LocalIA · Modelo local o API: qué tarea de investigación necesita cada uno</title><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --tinta:#0F2237; --acero:#2E4B6B; --acero-claro:#7C93AC; --gris:#5D7691;
+  --papel:#F3F6FA; --blanco:#FFFFFF; --linea:#D8E0E9; --linea-2:#E8EEF4;
+  --brasa:#E4572E; --brasa-osc:#C9441F; --brasa-suave:#FDEBE4;
+  --forjado:#0E7C6B; --forjado-suave:#E0F3EE; --aviso:#8A3617;
+  --c-ctx:#1F6FB2; --c-comp:#6B4FD8; --c-rda:#0E8C7A; --c-tema:#C98200; --c-eval:#E4572E; --c-final:#2E4B6B;
+  --sombra:0 1px 0 rgba(15,34,55,.05), 0 14px 34px -22px rgba(15,34,55,.45);
+  --sombra-alta:0 2px 0 rgba(15,34,55,.04), 0 22px 50px -24px rgba(15,34,55,.55);
+  --r:14px;
+  --display:"Bricolage Grotesque",Georgia,serif;
+  --texto:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--papel);color:var(--tinta);font-family:var(--texto);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:84px}
+a{color:var(--acero)}
+:focus-visible{outline:3px solid var(--brasa);outline-offset:2px;border-radius:6px}
+.hidden{display:none!important}
+svg.i{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+code{font-family:var(--mono);font-size:.85em;background:var(--linea-2);padding:1px 5px;border-radius:5px}
+
+/* Barra superior */
+.topbar{position:sticky;top:0;z-index:40;background:var(--tinta);color:#EAF1F7;box-shadow:0 6px 24px -14px rgba(0,0,0,.6)}
+.tb-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px}
+.logo{background:none;border:0;color:#fff;font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.03em;cursor:pointer;padding:2px 4px;display:flex;align-items:center;gap:8px}
+.logo em{font-style:normal;color:var(--brasa)}
+.logo .anv{width:30px;height:30px;border-radius:9px;background:var(--brasa);display:grid;place-items:center;color:#fff}
+.stepper{flex:1;display:flex;align-items:center;justify-content:center;min-width:0}
+.sdot{display:flex;align-items:center;gap:7px;background:none;border:0;color:#8FA7BE;font:600 13px var(--texto);padding:6px;cursor:pointer;border-radius:10px;white-space:nowrap}
+.sdot:disabled{cursor:not-allowed;opacity:.45}
+.sdot .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:2px solid #3E5C7D;font-size:12px;color:#A9C0D4;transition:all .2s}
+.sdot .n svg{width:14px;height:14px}
+.sdot[data-state="done"] .n{background:var(--forjado);border-color:var(--forjado);color:#fff}
+.sdot[data-state="now"]{color:#fff}
+.sdot[data-state="now"] .n{background:var(--brasa);border-color:var(--brasa);color:#fff;box-shadow:0 0 0 4px rgba(228,87,46,.25)}
+.sdot:not(:disabled):hover{background:rgba(255,255,255,.06)}
+.sline{flex:0 1 26px;height:2px;background:#2F4A68;min-width:6px}
+.sline.on{background:var(--forjado)}
+.tb-tools{display:flex;gap:6px}
+.tb-btn{background:transparent;border:1px solid #3E5C7D;color:#C9D8E6;border-radius:9px;padding:6px 10px;font:600 13px var(--texto);cursor:pointer;display:flex;align-items:center;gap:6px}
+.tb-btn:hover{border-color:var(--brasa);color:#fff}
+.progress{height:4px;background:#1E3550}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brasa),#F59E0B);transition:width .4s}
+@media(max-width:960px){.sdot .lbl{display:none}.sdot[data-state="now"] .lbl{display:inline}}
+@media(max-width:720px){
+  .tb-in{flex-wrap:wrap;gap:8px}
+  .stepper{order:3;flex-basis:100%;justify-content:space-between}
+  .sdot[data-state="now"] .lbl{display:none}
+  .tb-btn .lbl{display:none}
+}
+
+/* Pantallas */
+main{max-width:1180px;margin:0 auto;padding:26px 16px 40px}
+.screen{display:none}
+.screen.on{display:block}
+@media(prefers-reduced-motion:no-preference){.screen.on{animation:rise .35s cubic-bezier(.2,.7,.3,1) both}@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}
+.sh{display:flex;gap:18px;align-items:flex-start;margin:4px 0 22px}
+.sh-ico{width:64px;height:64px;border-radius:18px;background:var(--c,var(--brasa));color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 12px 24px -14px var(--c,var(--brasa))}
+.sh-ico svg{width:32px;height:32px}
+.sh-step{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acero-claro);margin:4px 0}
+.sh h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.6vw,38px);letter-spacing:-.025em;line-height:1.05;margin:0 0 6px}
+.sh-lede{margin:0;color:var(--gris);font-size:16.5px;max-width:70ch}
+@media(max-width:600px){.sh-ico{width:48px;height:48px;border-radius:14px}.sh-ico svg{width:24px;height:24px}}
+
+.card{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sombra);padding:20px;margin-bottom:18px}
+.card h3{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+.card h3 .num{width:26px;height:26px;border-radius:8px;background:var(--tinta);color:#fff;font:700 13px var(--mono);display:grid;place-items:center}
+.card .sub{margin:0 0 14px;color:var(--gris);font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:20px;align-items:start}
+.sticky{position:sticky;top:96px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}.sticky{position:static}}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+
+label,.lab{display:block;font-size:13.5px;font-weight:600;margin:0 0 6px;color:var(--acero)}
+label small,.lab small{font-weight:500;color:var(--acero-claro)}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;padding:11px 13px;border:1.5px solid var(--linea);border-radius:10px;font-family:var(--texto);font-size:15px;color:var(--tinta);background:#fff;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acero-claro);box-shadow:0 0 0 4px rgba(124,147,172,.18)}
+input.bad{border-color:var(--brasa);box-shadow:0 0 0 4px rgba(228,87,46,.15)}
+textarea{resize:vertical;min-height:96px;line-height:1.5}
+input::placeholder,textarea::placeholder{color:#9DB0C2}
+.field{margin-bottom:16px}
+.help{font-size:12.8px;color:var(--gris);margin:6px 0 0}
+.help b{color:var(--acero)}
+
+button{font-family:var(--texto);cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:11px;font-weight:600;font-size:15px;border:1.5px solid transparent;padding:11px 18px;transition:transform .08s,background .15s,border-color .15s;text-decoration:none;line-height:1.2}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--brasa);color:#fff;box-shadow:0 8px 18px -10px var(--brasa)}
+.btn-primary:hover{background:var(--brasa-osc)}
+.btn-big{font-size:17px;padding:14px 24px;border-radius:13px}
+.btn-dark{background:var(--tinta);color:#fff}
+.btn-dark:hover{background:#1c3656}
+.btn-ghost{background:#fff;border-color:var(--linea);color:var(--acero)}
+.btn-ghost:hover{border-color:var(--acero-claro);background:#F7FAFC}
+.btn-ok{background:var(--forjado);color:#fff}
+.btn-ok:hover{background:#0b6457}
+.btn-word{background:#2B579A;color:#fff}
+.btn-word:hover{background:#1e3f7a}
+.btn-sm{padding:7px 12px;font-size:13.5px;border-radius:9px}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:#fff;border:1.5px solid var(--linea);border-radius:999px;padding:7px 13px;font-size:13.5px;color:var(--acero);cursor:pointer;display:inline-flex;align-items:center;gap:6px;line-height:1.25;text-align:left}
+.chip:hover{border-color:var(--brasa);color:var(--brasa)}
+.chip[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.chip.mini-ex{font-size:12.5px;padding:4px 10px;border-style:dashed}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1.5px solid var(--linea);background:#fff;border-radius:9px;padding:7px 11px;font-size:13.5px;font-weight:600;color:var(--acero)}
+.seg button:hover{border-color:var(--acero-claro)}
+.seg button[aria-pressed="true"]{background:var(--tinta);border-color:var(--tinta);color:#fff}
+
+.meto{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.meto button{text-align:left;background:#fff;border:1.5px solid var(--linea);border-radius:12px;padding:10px 12px;color:var(--tinta)}
+.meto button b{display:block;font-size:14px}
+.meto button span{display:block;font-size:12.3px;color:var(--gris);line-height:1.35;margin-top:2px}
+.meto button:hover{border-color:var(--acero-claro)}
+.meto button[aria-pressed="true"]{border-color:var(--tinta);box-shadow:0 0 0 2px var(--tinta);background:var(--papel)}
+
+.tip{display:flex;gap:12px;background:#FFF8E6;border:1px solid #F3DDA0;border-radius:12px;padding:13px 15px;font-size:14px;color:#6B4E00;margin-bottom:18px}
+.tip svg{width:22px;height:22px;color:#C98200;flex:none;margin-top:1px}
+.tip strong{color:#523B00}
+.aviso{background:var(--brasa-suave);border:1px solid #F3C7B5;border-radius:12px;padding:13px 15px;font-size:14px;color:var(--aviso);margin-bottom:16px}
+.okbox{background:var(--forjado-suave);border:1px solid #A9DCCF;border-radius:12px;padding:13px 15px;font-size:14px;color:#0B5A4E;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* Inicio */
+.hero{background:var(--tinta);color:#EAF1F7;border-radius:22px;padding:40px 36px;position:relative;overflow:hidden;margin-bottom:26px;box-shadow:var(--sombra-alta)}
+.hero::before{content:"";position:absolute;right:-80px;top:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(228,87,46,.55),transparent 65%)}
+.hero::after{content:"";position:absolute;left:30%;bottom:-140px;width:420px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(14,140,122,.35),transparent 65%)}
+.hero>*{position:relative;z-index:1}
+@media(max-width:600px){.hero{padding:28px 20px;border-radius:18px}}
+.eyebrow{font:600 11.5px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#8FA7BE;margin:0 0 14px}
+.hero h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,5.4vw,58px);line-height:.98;letter-spacing:-.035em;margin:0 0 16px;max-width:17ch}
+.hero h1 em{font-style:normal;color:var(--brasa)}
+.hero p.lede{max-width:62ch;font-size:18px;color:#C3D3E2;margin:0 0 24px}
+.hero .actions .btn-ghost{background:transparent;color:#fff;border-color:#4A6787}
+.hero .actions .btn-ghost:hover{border-color:#fff}
+.draft{margin-top:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14.5px}
+.sec-title{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:-.02em;margin:34px 0 6px}
+.sec-sub{color:var(--gris);margin:0 0 16px}
+.journey{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.jstop{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:16px;position:relative}
+.jstop .ji{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--c);margin-bottom:10px}
+.jstop .ji svg{width:20px;height:20px}
+.jstop b{display:block;font-size:15px;margin-bottom:2px}
+.jstop span{display:block;font-size:13px;color:var(--gris);line-height:1.45}
+.jstop .jn{position:absolute;top:12px;right:14px;font:700 12px var(--mono);color:var(--acero-claro)}
+@media(max-width:900px){.journey{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.journey{grid-template-columns:1fr}}
+
+.parts{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.part{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--linea);border-radius:12px;padding:12px 14px}
+.part .pi{width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;flex:none}
+.part b{display:block;font-size:14.5px}
+.part span{display:block;font-size:12.8px;color:var(--gris);line-height:1.4}
+
+.examples{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.excard{background:#fff;border:1px solid var(--linea);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sombra);position:relative;overflow:hidden;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.excard:hover{transform:translateY(-3px);box-shadow:var(--sombra-alta)}
+.excard::before{content:"";position:absolute;left:0;top:0;right:0;height:5px;background:var(--c)}
+.excard .emo{font-size:32px;line-height:1}
+.excard .area{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--acero-claro)}
+.excard b{font-family:var(--display);font-size:18px;letter-spacing:-.01em;line-height:1.15}
+.excard p{margin:0;font-size:13.5px;color:var(--gris);flex:1}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 12%,#fff);border-radius:999px;padding:3px 9px;align-self:flex-start}
+
+/* Clave */
+.keyrow{display:flex;gap:8px}
+.keyrow input{flex:1;font-family:var(--mono);font-size:14px}
+.eye{width:46px;flex:none;border:1.5px solid var(--linea);background:#fff;border-radius:10px;color:var(--acero);display:grid;place-items:center}
+.light{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--papel);margin-top:14px;font-size:14.5px;font-weight:600}
+.light .bulbo{width:14px;height:14px;border-radius:50%;background:#B8C5D3;box-shadow:0 0 0 4px rgba(184,197,211,.3);flex:none}
+.light[data-s="ok"] .bulbo{background:#16A34A;box-shadow:0 0 0 4px rgba(22,163,74,.22)}
+.light[data-s="err"] .bulbo{background:var(--brasa);box-shadow:0 0 0 4px rgba(228,87,46,.22)}
+.light[data-s="wait"] .bulbo{background:#F59E0B;box-shadow:0 0 0 4px rgba(245,158,11,.25)}
+.olsteps{list-style:none;padding:0;margin:0;counter-reset:o;display:flex;flex-direction:column;gap:12px}
+.olsteps li{counter-increment:o;display:flex;gap:12px;font-size:14.5px;align-items:flex-start}
+.olsteps li::before{content:counter(o);width:28px;height:28px;border-radius:50%;background:var(--brasa-suave);color:var(--brasa);font:700 13px var(--mono);display:grid;place-items:center;flex:none}
+
+/* Acordeones */
+.acc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);margin-bottom:12px;box-shadow:var(--sombra);overflow:hidden}
+.acc>summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;align-items:center;gap:12px}
+.acc>summary::-webkit-details-marker{display:none}
+.acc>summary .ai{width:36px;height:36px;border-radius:10px;background:var(--papel);color:var(--acero);display:grid;place-items:center;flex:none}
+.acc[open]>summary .ai{background:var(--tinta);color:#fff}
+.acc>summary b{font-family:var(--display);font-size:17px;display:block}
+.acc>summary small{display:block;color:var(--gris);font-size:13px}
+.acc>summary .chev{margin-left:auto;transition:transform .2s;color:var(--acero-claro)}
+.acc[open]>summary .chev{transform:rotate(180deg)}
+.acc .inner{padding:4px 18px 18px;border-top:1px solid var(--linea-2)}
+.acc .inner>*:first-child{margin-top:14px}
+.prompt-ta{font-family:var(--mono);font-size:12.3px;min-height:130px;background:#FBFDFE}
+
+/* Resumen lateral */
+.sum h3{margin-bottom:10px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.stat{background:var(--papel);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font:800 24px var(--display);letter-spacing:-.02em;line-height:1.1}
+.stat span{font-size:12.3px;color:var(--gris)}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.checks li{display:flex;gap:9px;align-items:center;color:var(--gris)}
+.checks li .ck{width:20px;height:20px;border-radius:50%;border:2px solid var(--linea);display:grid;place-items:center;flex:none}
+.checks li.on{color:var(--tinta)}
+.checks li.on .ck{background:var(--forjado);border-color:var(--forjado);color:#fff}
+.checks li .ck svg{width:12px;height:12px}
+.docname{margin-top:14px;padding:11px 13px;border-radius:11px;background:var(--tinta);color:#C3D3E2;font-size:13.5px}
+.docname b{color:#fff}
+
+/* Generación */
+.agents{display:flex;flex-direction:column;gap:10px}
+.agent{background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sombra);overflow:hidden;transition:border-color .2s}
+.agent-h{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer}
+.agent .ai{width:42px;height:42px;border-radius:12px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;flex:none;transition:all .2s}
+.agent .ai svg{width:20px;height:20px}
+.agent-t{flex:1;min-width:0}
+.agent-t b{display:block;font-family:var(--display);font-size:16.5px}
+.agent-t span{display:block;font-size:13px;color:var(--gris)}
+.pill{font-size:12.5px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--linea-2);color:var(--gris);white-space:nowrap}
+.agent[data-s="run"]{border-color:#F59E0B}
+.agent[data-s="run"] .ai{background:var(--c);color:#fff;animation:pulse 1s infinite alternate}
+.agent[data-s="run"] .pill{background:#FFF1D6;color:#8A5A00}
+.agent[data-s="ok"] .ai{background:var(--c);color:#fff}
+.agent[data-s="ok"] .pill{background:var(--forjado-suave);color:var(--forjado)}
+.agent[data-s="err"]{border-color:var(--brasa)}
+.agent[data-s="err"] .pill{background:var(--brasa-suave);color:var(--brasa)}
+.agent-b{display:none;padding:4px 18px 16px 72px;font-size:14px;border-top:1px solid var(--linea-2);background:#FBFDFE}
+.agent.open .agent-b{display:block}
+@media(max-width:600px){.agent-b{padding-left:18px}}
+@keyframes pulse{from{transform:scale(1);box-shadow:0 0 0 0 rgba(228,87,46,.5)}to{transform:scale(1.06);box-shadow:0 0 0 10px rgba(228,87,46,0)}}
+.forging{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:14px;background:var(--tinta);color:#fff;margin-bottom:16px}
+.forging .spark{width:44px;height:44px;border-radius:12px;background:var(--brasa);display:grid;place-items:center;flex:none;animation:pulse 1s infinite alternate}
+.forging.done .spark{background:var(--forjado);animation:none}
+.forging.err .spark{animation:none}
+.forging b{font-family:var(--display);font-size:18px;display:block}
+.forging span{font-size:14px;color:#C3D3E2}
+.mini-list{margin:10px 0 0;padding:0;list-style:none}
+.mini-list li{padding:5px 0;border-bottom:1px solid var(--linea-2)}
+.mini-list li:last-child{border-bottom:0}
+.code{display:inline-block;font:700 11px var(--mono);border-radius:5px;padding:1px 6px;margin-right:6px;background:var(--linea-2);color:var(--acero)}
+
+/* Guía */
+.res-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.res-head h2{font-family:var(--display);font-weight:800;font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin:0;flex:1;min-width:240px;line-height:1.1}
+.doc{background:#fff;border:1px solid var(--linea);border-radius:18px;box-shadow:var(--sombra-alta);padding:40px 44px;max-width:900px;margin:0 auto}
+@media(max-width:700px){.doc{padding:22px 16px}}
+.doc-h{border-bottom:3px solid var(--tinta);padding-bottom:18px;margin-bottom:26px}
+.doc-kind{font:600 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brasa);margin:0 0 6px}
+.doc-h h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;line-height:1.05;margin:0 0 12px}
+.meta{display:flex;flex-wrap:wrap;gap:6px}
+.meta span{font-size:12.8px;font-weight:600;background:var(--papel);color:var(--acero);border-radius:999px;padding:4px 11px}
+.dsec{margin-bottom:28px}
+.dsec h2{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:-.01em;margin:0 0 10px;display:flex;align-items:center;gap:10px}
+.dsec h2 .num{width:28px;height:28px;border-radius:8px;background:var(--tinta);color:#fff;font:700 13px var(--mono);display:grid;place-items:center;flex:none}
+.dsec p{margin:0 0 10px;max-width:75ch}
+.sublab{font-size:13px;font-weight:700;color:var(--acero-claro);margin:14px 0 6px}
+.row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--linea-2);font-size:14.5px;align-items:flex-start}
+.row:last-child{border-bottom:0}
+.row .code{margin-top:2px;flex:none}
+.code.cg{background:#E6F0FA;color:var(--c-ctx)}
+.code.ce{background:#EEEAFB;color:var(--c-comp)}
+.code.bl{background:var(--forjado-suave);color:var(--forjado)}
+.code.tm{background:var(--tinta);color:#fff}
+.row .hrs{margin-left:auto;font-size:12.5px;color:var(--gris);white-space:nowrap}
+.blk{font-weight:700;margin:16px 0 4px;display:flex;gap:8px;align-items:baseline}
+.blk small{font-weight:500;color:var(--gris)}
+.tbl-wrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{background:var(--tinta);color:#fff;text-align:left;padding:9px 11px;font-size:12.5px;font-weight:700}
+table.t td{padding:9px 11px;border-bottom:1px solid var(--linea-2);vertical-align:top}
+table.t tr:nth-child(even) td{background:#FAFCFE}
+.peso{font-weight:800;color:var(--brasa);white-space:nowrap}
+.note{margin-top:12px;padding:11px 14px;background:var(--papel);border-left:4px solid var(--forjado);border-radius:8px;font-size:14px}
+.demo-flag{background:#FFF8E6;border:1px solid #F3DDA0;color:#6B4E00;border-radius:12px;padding:11px 15px;font-size:14px;margin:0 auto 16px;max-width:900px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.demo-flag svg{color:#C98200}
+
+/* Navegación inferior */
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:35;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--linea)}
+.bn-in{max-width:1180px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.bn-hint{flex:1;text-align:center;font-size:14px;color:var(--gris)}
+.bn-hint b{color:var(--tinta)}
+@media(max-width:600px){.bn-hint{display:none}.bn-in{justify-content:space-between}}
+
+/* Modal */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(15,34,55,.55);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
+.modal.on{display:flex}
+.modal-box{background:#fff;border-radius:18px;max-width:760px;width:100%;box-shadow:var(--sombra-alta);overflow:hidden}
+.modal-head{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--tinta);color:#fff}
+.modal-head h2{font-family:var(--display);font-size:22px;margin:0;flex:1}
+.modal-head button{background:transparent;border:1px solid #4A6787;color:#fff;border-radius:9px;padding:6px 10px}
+.modal-body{padding:18px 20px 22px}
+.glos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.glos{grid-template-columns:1fr}}
+.glos div{background:var(--papel);border-radius:12px;padding:12px 14px}
+.glos b{display:block;font-family:var(--display);font-size:16px;margin-bottom:2px}
+.glos span{font-size:13.8px;color:var(--acero)}
+.hist{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--linea);border-radius:12px;margin-bottom:8px}
+.hist-t{flex:1;min-width:0;cursor:pointer}
+.hist-t b{display:block;font-size:15px}
+.hist-t span{font-size:12.8px;color:var(--gris)}
+.hist:hover{border-color:var(--acero-claro)}
+.iconbtn{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--linea);background:#fff;color:var(--acero);display:grid;place-items:center;padding:0}
+.iconbtn:hover{border-color:var(--brasa);color:var(--brasa)}
+.empty{text-align:center;color:var(--gris);padding:30px 10px}
+
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--tinta);color:#fff;padding:11px 18px;border-radius:12px;font-size:14.5px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:70;max-width:90vw;text-align:center;box-shadow:var(--sombra-alta)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+footer{max-width:1180px;margin:0 auto;padding:0 16px 30px;font-size:13px;color:#6E8299}
+footer hr{border:0;border-top:1px solid var(--linea);margin:0 0 14px}
+
+@media print{
+  body{background:#fff;padding:0}
+  .topbar,.bottomnav,.res-head,.demo-flag,.okbox,footer,.toast,.modal{display:none!important}
+  main{padding:0;max-width:none}
+  .screen{display:none!important}
+  
+  .doc{box-shadow:none;border:0;padding:0;max-width:none}
+  .dsec{break-inside:avoid-page}
+  table.t th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+/* ══ v2 ══ */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:640px){.grid3{grid-template-columns:1fr}}
+.feats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:960px){.feats{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.feats{grid-template-columns:1fr}}
+.feat{background:#fff;border:1px solid var(--linea);border-radius:14px;padding:16px;border-top:4px solid var(--c)}
+.feat .pi{width:38px;height:38px;border-radius:11px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);display:grid;place-items:center;margin-bottom:10px}
+.feat b{display:block;font-family:var(--display);font-size:17px;margin-bottom:3px}
+.feat span{display:block;font-size:13.5px;color:var(--gris);line-height:1.45}
+.importbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--tinta);color:#EAF1F7;border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+.importbar .pi{width:40px;height:40px;border-radius:11px;background:var(--brasa);display:grid;place-items:center;flex:none}
+.importbar b{display:block;font-size:15px}
+.importbar span{display:block;font-size:13.3px;color:#A9C0D4}
+.importbar .btn-dark{background:#fff;color:var(--tinta)}
+.importbar .btn-dark:hover{background:#EAF1F7}
+.inacc{border-top:1px solid var(--linea-2);margin-top:4px;padding-top:12px}
+.inacc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--acero)}
+.inacc>summary::-webkit-details-marker{display:none}
+.inacc>summary .chev{margin-left:auto;transition:transform .2s;color:var(--acero-claro)}
+.inacc[open]>summary .chev{transform:rotate(180deg)}
+.rec{display:inline-block;font:700 11px var(--texto);background:var(--forjado-suave);color:var(--forjado);border-radius:999px;padding:2px 8px;vertical-align:2px;margin-left:4px}
+.checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:560px){.checkgrid{grid-template-columns:1fr}}
+.checkgrid label{display:flex;gap:9px;align-items:center;margin:0;padding:9px 11px;border-radius:10px;background:var(--papel);font-weight:500;color:var(--tinta);cursor:pointer;font-size:14px}
+.checkgrid input{width:18px;height:18px;accent-color:var(--forjado);margin:0}
+.checkgrid label:has(input:checked){background:var(--forjado-suave)}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;border:2px dashed var(--linea);border-radius:14px;padding:24px;cursor:pointer;color:var(--acero);margin:0;font-weight:500}
+.drop svg{width:30px;height:30px;color:var(--brasa)}
+.drop b{font-size:15px;color:var(--tinta)}
+.drop span{font-size:13px;color:var(--gris)}
+.drop.over,.drop:hover{border-color:var(--brasa);background:var(--brasa-suave)}
+
+
+/* ══ Estilos propios de la app (se añaden a forja-base.css). Prefijo fa- para no chocar con clases de Forja ══ */
+.logo .anv{background:linear-gradient(135deg,var(--brasa),#C98200)}
+.hero{padding:44px 38px 30px}.hero h1{max-width:20ch}.fa-inicio{margin:14px 0 0;font-size:14px;color:#C3D3E2}.fa-inicio:empty{display:none}.fa-inicio b{color:#fff}
+/* autores con ORCID */
+.fa-autores{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.14)}.fa-autores-cap{font:600 11px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:#8FA7BE;width:100%;margin-bottom:-4px}
+.fa-autor{display:flex;gap:11px;align-items:center}.fa-autor b{display:block;color:#fff;font:700 16px var(--display)}.fa-autor small{display:block;color:#9DB6CD;font-size:12.5px;max-width:34ch}.fa-av{width:44px;height:44px;border-radius:14px;background:var(--c);color:#fff;display:grid;place-items:center;font:800 15px var(--display);flex:none;box-shadow:0 10px 20px -12px var(--c)}.fa-x{font:300 26px var(--display);color:#5D7C9B}
+.fa-orcid{display:block;margin-top:2px;font:600 11.5px var(--mono);letter-spacing:.02em;color:#7FD6C4!important;text-decoration:none}.fa-orcid:hover{text-decoration:underline}.fa-idea{width:100%;margin:2px 0 0;font-size:13px;color:#9DB6CD;max-width:72ch}
+/* zonas «dónde va cada cosa» */
+.zonas{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:760px){.zonas{grid-template-columns:1fr}}.zona{border-radius:16px;padding:14px 16px;border:2px solid}.zona.l{border-color:#9FD9C4;background:var(--forjado-suave)}.zona.n{border-color:#E9C46A;background:#FFF8E6}.zona h4{margin:0 0 6px;font-family:var(--display);font-size:18px}.zona ul{margin:0;padding-left:18px;font-size:14px;line-height:1.7}
+.sec-title+.zonas,.sec-title+.journey{margin-top:14px}
+/* formularios y utilidades */
+.field input[type=text],.field input[type=number],.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--linea);border-radius:10px;font:15px var(--texto);background:#fff;color:var(--tinta)}.field textarea{line-height:1.55;resize:vertical}.field label{display:block;font:700 13px var(--texto);color:var(--acero);margin-bottom:5px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--brasa);box-shadow:0 0 0 3px rgba(228,87,46,.18)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid3,.grid2{grid-template-columns:1fr}}
+.card .actions{margin-top:12px}.card h3{margin-top:0}.fa-chk{display:flex;gap:8px;align-items:center;font:500 14.5px var(--texto);cursor:pointer}
+.fa-chip{display:inline-block;font:700 11.5px var(--texto);border-radius:999px;padding:3px 10px;background:var(--linea-2);color:var(--acero)}.fa-chip.ok{background:var(--forjado-suave);color:#0B5A4E}.fa-chip.aviso{background:#FFF1D6;color:#7A4B00}.fa-chip.error{background:var(--brasa-suave);color:var(--aviso)}
+.fa-pre{white-space:pre-wrap;font:12.5px/1.5 var(--mono);background:#0B1C2E;color:#D6E4F0;border-radius:12px;padding:12px;max-height:300px;overflow:auto}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--linea);border-top-color:var(--brasa);border-radius:50%;animation:fa-s .8s linear infinite;vertical-align:-2px}@keyframes fa-s{to{transform:rotate(360deg)}}
+.fa-foot{max-width:1180px;margin:10px auto 0;padding:0 16px 110px}.fa-foot hr{border:0;border-top:1px solid var(--linea);margin:0 0 16px}.fa-foot p{margin:0;font-size:12.8px;color:#6E8299;max-width:76ch;line-height:1.55}
+.glos div{display:block;margin-bottom:12px}.glos b{display:block}
+table{border-collapse:collapse;width:100%;font-size:13.8px}th{background:var(--papel);color:var(--acero);font:700 11px var(--mono);letter-spacing:.07em;text-transform:uppercase;text-align:left}td,th{padding:10px 12px;border-bottom:1px solid var(--linea-2);vertical-align:top}.table-wrap{overflow-x:auto}
+/* barra superior con muchos pasos: solo el actual lleva nombre (evita desbordes) */
+.tb-in{gap:10px}.stepper{min-width:0;flex:1 1 auto;justify-content:center;gap:2px}.sdot:not([data-state="now"]) .lbl{display:none}.sdot{padding-left:4px;padding-right:4px}.sline{min-width:8px;flex:0 1 22px}.logo,.tb-tools{flex:none}
+@media(max-width:900px){.tb-btn .lbl{display:none}}@media(max-width:720px){.hero{padding:28px 20px 24px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></symbol>
+  <symbol id="i-quiz" viewBox="0 0 24 24"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8M13 12h8M13 18h8"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 3v4M17 5h4M5 17v4M3 19h4"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+  <symbol id="i-form" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="tb-in">
+    <button class="logo" id="goHome" type="button" aria-label="Inicio"><span class="anv"><svg class="i"><use href="#i-cpu"/></svg></span><span>Local<em>IA</em></span></button>
+    <nav class="stepper" id="stepper" aria-label="Pasos"></nav>
+    <div class="tb-tools"><button class="tb-btn" id="btnIA" type="button"><svg class="i"><use href="#i-key"/></svg><span class="lbl">IA</span></button><button class="tb-btn" id="btnHelp" type="button"><svg class="i"><use href="#i-help"/></svg><span class="lbl">Ayuda</span></button></div>
+  </div>
+  <div class="progress"><span id="progBar"></span></div>
+</div>
+
+<main id="app">
+<!-- 0 · INICIO: portada con el qué, el para quién y los autores -->
+<section class="screen" data-step="0">
+  <div class="hero">
+    <p class="eyebrow">Modelos pequeños en local para investigar · Universidad Miguel Hernández de Elche</p>
+    <h1>¿Cuántas de tus llamadas <em>necesitaban de verdad</em> un modelo de frontera?</h1>
+    <p class="lede">Qwen3-4B corre en tu navegador. Pruébalo en cuatro tareas de investigación con datos que no salen de tu ordenador y compáralo, con números, con una API.</p>
+    <div class="actions"><button class="btn btn-primary btn-big" id="btnStart" type="button"><svg class="i"><use href="#i-play"/></svg>Empezar</button><button class="btn btn-ghost btn-big" id="btnEjemplo" type="button"><svg class="i"><use href="#i-eye"/></svg>Ver un ejemplo</button></div>
+    <p class="fa-inicio" id="inicioProj"></p>
+    <div class="fa-autores"><span class="fa-autores-cap">Realizada por</span>
+      <div class="fa-autor"><span class="fa-av" style="--c:#E4572E">FB</span><div><b>Fernando Borrás Rocher</b><small>Universidad Miguel Hernández de Elche</small><a class="fa-orcid" href="https://orcid.org/0000-0002-5519-4573" target="_blank" rel="noopener">ORCID 0000-0002-5519-4573</a></div></div>
+      </div>
+  </div>
+  <h2 class="sec-title">Cómo funciona</h2>
+  <div class="journey" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+    <div class="jstop" style="--c:#6B4FD8"><span class="jn">1</span><div class="ji"><svg class="i"><use href="#i-cpu"/></svg></div><b>Cargas Qwen3-4B</b><span>Corre en tu navegador (WebGPU) o en tu equipo con Ollama.</span></div>
+    <div class="jstop" style="--c:#1F6FB2"><span class="jn">2</span><div class="ji"><svg class="i"><use href="#i-folder"/></svg></div><b>Eliges el material</b><span>Resúmenes y entrevistas ficticios con verdad conocida, o los tuyos.</span></div>
+    <div class="jstop" style="--c:#E4572E"><span class="jn">3</span><div class="ji"><svg class="i"><use href="#i-sparkles"/></svg></div><b>Cuatro tareas en local</b><span>Anonimizar, extraer, cribar y codificar. El código valida cada salida.</span></div>
+    <div class="jstop" style="--c:#0E8C7A"><span class="jn">4</span><div class="ji"><svg class="i"><use href="#i-scale"/></svg></div><b>Lees la tabla</b><span>Qué se resolvió en local, qué se escaló y qué errores no vio el código.</span></div>
+  </div>
+  <h2 class="sec-title">Dónde va cada cosa</h2>
+  <div class="zonas"><div class="zona l"><h4>Siempre en tu ordenador</h4><ul><li>Los textos y lo que responde el modelo local</li><li>Las validaciones y la tabla comparativa</li><li>La anonimización: nunca se escala a ninguna API</li></ul></div>
+    <div class="zona n"><h4>Sale de tu ordenador</h4><ul><li>La primera vez, el motor (jsDelivr) y los pesos del modelo (Hugging Face, unos 2,5 GB, luego quedan en caché)</li><li>Solo si activas el escalado o la síntesis: texto enmascarado hacia tu proveedor de API, tras ver la muestra</li></ul></div></div>
+</section>
+
+<!-- 1 · MODELO LOCAL -->
+<section class="screen" data-step="1">
+  <header class="sh" style="--c:#6B4FD8"><div class="sh-ico"><svg class="i"><use href="#i-cpu"/></svg></div><div><p class="sh-step">Paso 1 de 4</p><h2>Modelo local</h2><p class="sh-lede">Elige dónde corre Qwen3-4B. Necesitas hacerlo una sola vez por sesión; la descarga queda en la caché del navegador.</p></div></header>
+  <div class="card"><div class="field"><label for="selMotor">Motor</label><select id="selMotor"><option value="webllm">En el navegador (WebLLM, WebGPU)</option><option value="ollama">En mi equipo con Ollama</option></select></div>
+    <p class="help" id="gpuInfo" role="status"></p></div>
+  <div class="card" id="cardWeb"><h3>En el navegador · Qwen3-4B</h3>
+    <p class="help">Descarga unos 2,5 GB la primera vez. Funciona en Chrome o Edge recientes con WebGPU. Sin WebGPU usa Ollama. Si tu tarjeta no admite <code>shader-f16</code>, se elige la variante de 32 bits, que necesita más memoria de vídeo.</p>
+    <div class="actions"><button class="btn btn-primary" id="btnCarga" type="button"><svg class="i"><use href="#i-download"/></svg>Cargar Qwen3-4B</button><button class="btn btn-ghost" id="btnPrueba" type="button"><svg class="i"><use href="#i-play"/></svg>Probar con una frase</button></div>
+    <progress id="locProg" max="1" value="0" hidden style="width:100%;margin-top:12px"></progress>
+    <p class="help" id="locEstado" role="status" aria-live="polite">Modelo sin cargar.</p></div>
+  <div class="card" id="cardOll"><h3>En mi equipo · Ollama</h3>
+    <p class="help">Instala Ollama, ejecuta <code>ollama pull qwen3:4b</code> y arranca el servidor permitiendo esta página: <code>OLLAMA_ORIGINS="https://fborrasumh.github.io" ollama serve</code>. Safari puede bloquear la conexión a <code>localhost</code> desde una página https.</p>
+    <div class="grid2"><div class="field"><label for="ollUrl">Dirección</label><input type="text" id="ollUrl"></div><div class="field"><label for="ollMod">Modelo</label><input type="text" id="ollMod"></div></div>
+    <div class="actions"><button class="btn btn-primary" id="btnOll" type="button"><svg class="i"><use href="#i-refresh"/></svg>Comprobar conexión</button></div>
+    <p class="help" id="ollEstado" role="status" aria-live="polite"></p></div>
+</section>
+
+<!-- 2 · MATERIAL -->
+<section class="screen" data-step="2">
+  <header class="sh" style="--c:#1F6FB2"><div class="sh-ico"><svg class="i"><use href="#i-folder"/></svg></div><div><p class="sh-step">Paso 2 de 4</p><h2>Material</h2><p class="sh-lede">Con los datos ficticios sabemos la respuesta correcta y podemos medir aciertos. Con los tuyos solo se puede validar por código.</p></div></header>
+  <div class="card"><div class="field"><label for="selMat">Origen de los datos</label><select id="selMat"><option value="ficticio">Datos ficticios de la demo (20 resúmenes y 6 entrevistas)</option><option value="propio">Mis propios textos</option></select></div>
+    <div id="matFic"><p class="help" id="matResumen"></p></div>
+    <div id="matProp" hidden><div class="field"><label for="propAbs">Resúmenes de artículos (separa cada uno con una línea que solo contenga ---)</label><textarea id="propAbs" rows="7" placeholder="Pega aquí los resúmenes…"></textarea></div>
+      <div class="field"><label for="propEnt">Fragmentos de entrevistas (separados con ---)</label><textarea id="propEnt" rows="7" placeholder="Pega aquí los fragmentos…"></textarea></div>
+      <div class="aviso">Pega solo datos que puedas tratar en tu equipo. Con textos reales, la anonimización la valida el código con expresiones regulares, pero no conoce los nombres que contiene: revisa el resultado a mano.</div></div></div>
+  <div class="card"><h3>Criterios de cribado</h3><div class="field"><textarea id="critTxt" rows="4" aria-label="Criterios de cribado"></textarea></div>
+    <h3>Libro de códigos (un código por línea, con el formato CÓDIGO: descripción)</h3><div class="field"><textarea id="codTxt" rows="5" aria-label="Libro de códigos"></textarea></div></div>
+  <div class="card"><h3>Vista previa</h3><div class="table-wrap"><table><thead><tr><th>Id</th><th>Texto</th></tr></thead><tbody id="matLista"></tbody></table></div></div>
+</section>
+
+<!-- 3 · TAREAS -->
+<section class="screen" data-step="3">
+  <header class="sh" style="--c:#E4572E"><div class="sh-ico"><svg class="i"><use href="#i-sparkles"/></svg></div><div><p class="sh-step">Paso 3 de 4</p><h2>Tareas</h2><p class="sh-lede">El modelo local propone; el código valida. Si la validación falla se escala a la API (si lo permites) o pasa a revisión humana.</p></div></header>
+  <div class="card"><div id="avisoEj"></div>
+    <label class="fa-chk"><input type="checkbox" id="chkEscala"> Escalar a la API cuando la validación falle (texto enmascarado, tras el aviso previo)</label>
+    <div class="actions"><button class="btn btn-primary" id="btnTodo" type="button"><svg class="i"><use href="#i-play"/></svg>Ejecutar las cuatro tareas</button><button class="btn btn-ghost" id="btnStop" type="button" disabled>Detener</button><button class="btn btn-ghost" id="btnBorra" type="button"><svg class="i"><use href="#i-trash"/></svg>Borrar resultados</button></div>
+    <p class="help" id="progTxt" role="status" aria-live="polite"></p></div>
+  <div id="tareas"></div>
+</section>
+
+<!-- 4 · COMPARATIVA -->
+<section class="screen" data-step="4">
+  <header class="sh" style="--c:#0E8C7A"><div class="sh-ico"><svg class="i"><use href="#i-scale"/></svg></div><div><p class="sh-step">Paso 4 de 4</p><h2>Comparativa</h2><p class="sh-lede">La pregunta no es si el modelo pequeño es igual de bueno, sino cuántas de tus llamadas necesitaron de verdad el grande.</p></div></header>
+  <div class="card" id="comparativa"></div>
+  <div class="card"><h3>Precios de tu API (opcional)</h3><p class="help">Escribe los precios por millón de tokens de tu proveedor para estimar el coste. La app no guarda precios por su cuenta porque cambian.</p>
+    <div class="grid2"><div class="field"><label for="precIn">Entrada</label><input type="number" id="precIn" min="0" step="any" inputmode="decimal"></div><div class="field"><label for="precOut">Salida</label><input type="number" id="precOut" min="0" step="any" inputmode="decimal"></div></div></div>
+  <div class="card"><h3>Descargar</h3><div class="actions" style="margin-top:0"><button class="btn btn-word" id="btnWord" type="button"><svg class="i"><use href="#i-doc"/></svg>Word</button><button class="btn btn-ghost" id="btnCsv" type="button">CSV</button><button class="btn btn-ghost" id="btnJson" type="button">JSON reproducible</button></div></div>
+</section>
+</main>
+
+<footer class="fa-foot"><hr><p><b>LocalIA</b> · Fernando Borrás Rocher · Universidad Miguel Hernández de Elche. Herramienta de apoyo y de demostración: los datos de ejemplo son ficticios, la IA puede equivocarse y la decisión final es tuya. Tus datos se guardan solo en este navegador.</p></footer>
+<div class="bottomnav"><div class="bn-in"><button class="btn btn-ghost" id="navBack" type="button"><svg class="i"><use href="#i-left"/></svg>Atrás</button><div class="bn-hint" id="navHint"></div><button class="btn btn-primary" id="navNext" type="button"><span id="navNextTxt">Siguiente</span><svg class="i"><use href="#i-right"/></svg></button></div></div>
+
+<div class="modal" id="mIA" role="dialog" aria-modal="true" aria-labelledby="mIAT"><div class="modal-box"><div class="modal-head"><h2 id="mIAT">Inteligencia artificial</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body">
+  <div class="field"><label for="selProv">Proveedor</label><select id="selProv"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option><option value="anthropic">Anthropic Claude</option></select></div>
+  <div class="field"><label for="apiKey">Tu clave de API</label><div class="keyrow"><input type="password" id="apiKey" autocomplete="off"><button class="eye" id="btnEye" type="button" aria-label="Ver"><svg class="i"><use href="#i-eye"/></svg></button></div></div>
+  <div class="field"><label for="modelo">Modelo</label><input type="text" id="modelo" list="modelos"><datalist id="modelos"></datalist></div>
+  <div class="actions"><button class="btn btn-ghost btn-sm" id="btnModelos" type="button">Ver los modelos de mi clave</button></div>
+  <p class="help" id="iaEstado">La clave se guarda solo en este navegador y se envía únicamente a tu proveedor. Cada persona usa la suya y paga su propio uso. Elige un modelo económico: este uso no necesita el más potente.</p></div></div></div>
+<div class="modal" id="mEnvio" role="dialog" aria-modal="true" aria-labelledby="mEnT"><div class="modal-box"><div class="modal-head"><h2 id="mEnT">Esto es lo que saldría hacia tu proveedor de IA</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div id="envioInfo"></div><pre class="fa-pre" id="envioTxt"></pre><label class="fa-chk" style="margin:12px 0"><input type="checkbox" id="envioOk"> He revisado la muestra y confirmo que puede salir de mi ordenador.</label><div class="actions"><button class="btn btn-primary" id="envioSi" type="button" disabled>Enviar y analizar</button><button class="btn btn-ghost" id="envioNo" type="button">Cancelar</button></div></div></div></div>
+<div class="modal" id="mHelp" role="dialog" aria-modal="true" aria-labelledby="mHelpT"><div class="modal-box"><div class="modal-head"><h2 id="mHelpT">Ayuda</h2><button type="button" data-close>Cerrar</button></div><div class="modal-body"><div class="glos" id="glos"></div></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>const APP="localia";const APP_NAME="LocalIA";const LOGO_ICON="cpu";
+"use strict";
+/* ── utilidades comunes (todas las apps Forja) ──────────────────────────────
+   Requiere que la app defina antes:  const APP = 'miapp';  (prefijo de almacenamiento)  */
+const $ = id => document.getElementById(id), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ico = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = (p = '') => p + Math.random().toString(36).slice(2, 8);
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const wc = s => (String(s || '').trim().match(/[\p{L}\p{N}]+/gu) || []).length;
+const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+const nf = n => Math.round(n).toLocaleString('es-ES');
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const slug = s => norm(s).replace(/ /g, '_').slice(0, 40) || 'x';
+function toast(m, ms = 4200) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); }
+function dl(nombre, contenido, tipo) { const b = contenido instanceof Blob ? contenido : new Blob([contenido], {type: tipo}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2500); }
+
+/* librerías externas: solo desde cdnjs (la CSP no admite otros orígenes) */
+const LIB = {
+  mammoth: 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js',
+  jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+  pdfw: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+  docx: 'https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js'
+};
+function cargaLib(urls) {
+  return urls.reduce((p, u) => p.catch(() => new Promise((ok, ko) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = () => { s.remove(); ko(); }; document.head.appendChild(s); })), Promise.reject())
+    .catch(() => { throw new Error('No se pudo cargar una librería: ¿hay conexión?'); });
+}
+
+/* huella SHA-256 (con alternativa para file:// sin contexto seguro) y canonización estable */
+const canon = v => v === null || typeof v !== 'object' ? JSON.stringify(v) : Array.isArray(v) ? '[' + v.map(canon).join(',') + ']' : '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+function sha256js(bytes) {
+  const pr = []; for (let n = 2; pr.length < 64; n++) if (pr.every(p => n % p)) pr.push(n);
+  const fr = x => Math.floor((x - Math.floor(x)) * 4294967296), K = pr.map(p => fr(Math.cbrt(p))), H = pr.slice(0, 8).map(p => fr(Math.sqrt(p)));
+  const l = bytes.length, pad = new Uint8Array(((l + 9 + 63) >> 6) << 6); pad.set(bytes); pad[l] = 0x80;
+  const dv = new DataView(pad.buffer); dv.setUint32(pad.length - 8, Math.floor(l * 8 / 4294967296)); dv.setUint32(pad.length - 4, (l * 8) >>> 0);
+  const rr = (x, n) => (x >>> n) | (x << (32 - n)), W = new Uint32Array(64);
+  for (let i = 0; i < pad.length; i += 64) {
+    for (let t = 0; t < 16; t++) W[t] = dv.getUint32(i + t * 4);
+    for (let t = 16; t < 64; t++) { const s0 = rr(W[t - 15], 7) ^ rr(W[t - 15], 18) ^ (W[t - 15] >>> 3), s1 = rr(W[t - 2], 17) ^ rr(W[t - 2], 19) ^ (W[t - 2] >>> 10); W[t] = (W[t - 16] + s0 + W[t - 7] + s1) >>> 0; }
+    let [a, b, c, d, e, f, g, hh] = H;
+    for (let t = 0; t < 64; t++) { const S1 = rr(e, 6) ^ rr(e, 11) ^ rr(e, 25), ch = (e & f) ^ (~e & g), t1 = (hh + S1 + ch + K[t] + W[t]) >>> 0, S0 = rr(a, 2) ^ rr(a, 13) ^ rr(a, 22), mj = (a & b) ^ (a & c) ^ (b & c), t2 = (S0 + mj) >>> 0; hh = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0; }
+    [a, b, c, d, e, f, g, hh].forEach((v, j) => H[j] = (H[j] + v) >>> 0);
+  }
+  return H.map(v => v.toString(16).padStart(8, '0')).join('');
+}
+async function sha256(str) {
+  const b = new TextEncoder().encode(str);
+  if (window.crypto?.subtle) { try { return [...new Uint8Array(await crypto.subtle.digest('SHA-256', b))].map(x => x.toString(16).padStart(2, '0')).join(''); } catch {} }
+  return sha256js(b);
+}
+
+/* ── persistencia local (IndexedDB). La app define:  let S = {...};  y opcionalmente  const KEYP = () => 'main';  ── */
+const dbP = new Promise((ok, ko) => { const r = indexedDB.open(APP, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); });
+const kv = async (mode, fn) => { const d = await dbP; return new Promise((ok, ko) => { const tx = d.transaction('kv', mode), q = fn(tx.objectStore('kv')); tx.oncomplete = () => ok(q && q.result); tx.onerror = () => ko(tx.error); }); };
+const _key = () => (typeof KEYP === 'function' ? KEYP() : 'main');
+let _g;
+function guarda() { clearTimeout(_g); _g = setTimeout(() => kv('readwrite', s => s.put(S, _key())).catch(() => toast('No se pudo guardar en el navegador (¿demasiado material?)')), 500); }
+/* guardado inmediato: úsalo justo después de pagar una llamada a la IA, para no perder el resultado si se cierra la pestaña */
+const guardaYa = () => { clearTimeout(_g); return kv('readwrite', s => s.put(S, _key())).catch(() => toast('No se pudo guardar en el navegador')); };
+window.addEventListener('pagehide', () => { clearTimeout(_g); try { kv('readwrite', s => s.put(S, _key())); } catch {} });
+async function cargaEstado(key = _key()) { try { const p = await kv('readonly', s => s.get(key)); return p || null; } catch { return null; } }
+
+/* ── proveedores de IA con la clave de cada persona: OpenAI, Google Gemini, Anthropic Claude ──────────────
+   Mensajes: [{role:'system'|'user'|'assistant', content: string | [{t:'text',v}, {t:'img',mime,data:'data:...'}]}]
+   Uso:   const texto = await llm(msgs, {max: 2800});      const obj = await llmJSON(msgs, {max: 3500});
+   Las claves viven solo en localStorage de este navegador. La clave de OpenAI es compartida por todo el catálogo ('ia_openai_key'). */
+const PROV = {
+  openai: {n: 'OpenAI', m: 'gpt-6-luna', k: 'ia_openai_key'},
+  gemini: {n: 'Google Gemini', m: 'gemini-2.5-flash', k: APP + '_key_gemini'},
+  anthropic: {n: 'Anthropic Claude', m: 'claude-haiku-4-5-20251001', k: APP + '_key_anthropic'}
+};
+const getProv = () => PROV[localStorage.getItem(APP + '_prov')] ? localStorage.getItem(APP + '_prov') : 'openai';
+const getKey = (p = getProv()) => localStorage.getItem(PROV[p].k) || '';
+const getMod = (p = getProv()) => localStorage.getItem(APP + '_model_' + p) || PROV[p].m;
+const parseJ = tx => { tx = String(tx || '').trim().replace(/^```(?:json)?|```$/g, '').trim(); try { return JSON.parse(tx); } catch { const m = tx.match(/\{[\s\S]*\}/); if (m) try { return JSON.parse(m[0]); } catch {} } return null; };
+const partes = c => typeof c === 'string' ? [{t: 'text', v: c}] : c;
+function agrupa(msgs, rolA) { const o = []; for (const m of msgs.filter(m => m.role !== 'system')) { const r = m.role === 'assistant' ? rolA : 'user'; if (o.length && o.at(-1).role === r) o.at(-1).parts.push({t: 'text', v: '\n\n'}, ...partes(m.content)); else o.push({role: r, parts: [...partes(m.content)]}); } if (o.length && o[0].role !== 'user') o.unshift({role: 'user', parts: [{t: 'text', v: '.'}]}); return o; }
+const sysDe = msgs => msgs.filter(m => m.role === 'system').map(m => typeof m.content === 'string' ? m.content : m.content.map(p => p.v || '').join('')).join('\n\n');
+function httpErr(st, tx, pv, mod) {
+  if (st === 401 || st === 403 || (pv === 'gemini' && st === 400 && /API key|API_KEY/i.test(tx))) return new Error(`${PROV[pv].n} no reconoce tu clave. Revísala en el botón «IA».`);
+  if (st === 404 || /model_not_found|not found|does not exist/i.test(tx)) return new Error(`Tu clave no tiene acceso al modelo «${mod}». Elige otro en el botón «IA».`);
+  if (st === 429 && /quota|billing|credit|RESOURCE_EXHAUSTED/i.test(tx)) return new Error(`Tu cuenta de ${PROV[pv].n} no tiene saldo o ha alcanzado su límite.`);
+  if (st === 400 && /image|vision|multimodal|modalit/i.test(tx)) return new Error(`El modelo «${mod}» no admite imágenes. Elige uno con visión.`);
+  return new Error(`${PROV[pv].n} ${st}: ${String(tx).slice(0, 180)}`);
+}
+async function conReintentos(fn, pv) {
+  for (let k = 0; k < 5; k++) {
+    let r; try { r = await fn(); } catch { if (k >= 2) throw new Error(`No hay conexión con ${PROV[pv].n}.`); await sleep(1500); continue; }
+    if (r.ok) return r;
+    if (r.status === 429 || r.status >= 500) { const tx = await r.clone().text(); if (r.status === 429 && /quota|billing|credit/i.test(tx)) return r; await sleep(2 ** (k + 1) * 1000); continue; }
+    return r;
+  }
+  throw new Error(`${PROV[pv].n} no responde ahora mismo. Inténtalo de nuevo en un momento.`);
+}
+async function llm(msgs, {json = false, max = 2800} = {}) {
+  const pv = getProv(), key = getKey(pv), mod = getMod(pv);
+  if (!key) throw new Error('Falta tu clave de IA. Pulsa el botón «IA», arriba.');
+  if (pv === 'openai') {
+    /* los modelos nuevos rechazan max_tokens/temperature: se prueban variantes según el error */
+    const razona = /^(gpt-[56]|o\d)/.test(mod), o = {json, reasoning: razona, comp: razona, temp: !razona};
+    const mm = msgs.map(m => ({role: m.role, content: typeof m.content === 'string' ? m.content : m.content.map(p => p.t === 'text' ? {type: 'text', text: p.v} : {type: 'image_url', image_url: {url: p.data}})}));
+    for (let k = 0; k < 6; k++) {
+      const body = {model: mod, messages: mm};
+      if (o.json) body.response_format = {type: 'json_object'};
+      if (o.comp) body.max_completion_tokens = max * (o.reasoning ? 2 : 1); else body.max_tokens = max;
+      if (o.reasoning) body.reasoning_effort = 'low';
+      if (o.temp) body.temperature = 0.4;
+      const r = await conReintentos(() => fetch('https://api.openai.com/v1/chat/completions', {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + key}, body: JSON.stringify(body)}), pv);
+      if (r.ok) return (await r.json()).choices?.[0]?.message?.content || '';
+      const tx = await r.text();
+      if (r.status === 400) {
+        if (/reasoning_effort/i.test(tx) && o.reasoning) { o.reasoning = false; continue; }
+        if (/max_completion_tokens/i.test(tx) && o.comp) { o.comp = false; continue; }
+        if (/max_tokens/i.test(tx) && !o.comp) { o.comp = true; continue; }
+        if (/temperature/i.test(tx) && o.temp) { o.temp = false; continue; }
+        if (/response_format|json/i.test(tx) && o.json) { o.json = false; const u = mm.at(-1); if (typeof u.content === 'string') u.content += '\nResponde SOLO con JSON válido.'; else u.content.push({type: 'text', text: 'Responde SOLO con JSON válido.'}); continue; }
+      }
+      throw httpErr(r.status, tx, pv, mod);
+    }
+    throw new Error('OpenAI no responde ahora mismo.');
+  }
+  if (pv === 'gemini') {
+    const sys = sysDe(msgs), cont = agrupa(msgs, 'model').map(m => ({role: m.role, parts: m.parts.map(p => p.t === 'text' ? {text: p.v} : {inline_data: {mime_type: p.mime, data: p.data.split(',')[1]}})}));
+    const body = {contents: cont, generationConfig: {maxOutputTokens: max, temperature: 0.4}};
+    if (sys) body.systemInstruction = {parts: [{text: sys}]};
+    if (json) body.generationConfig.responseMimeType = 'application/json';
+    const r = await conReintentos(() => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mod)}:generateContent`, {method: 'POST', headers: {'Content-Type': 'application/json', 'x-goog-api-key': key}, body: JSON.stringify(body)}), pv);
+    const tx = await r.text(); if (!r.ok) throw httpErr(r.status, tx, pv, mod);
+    const j = JSON.parse(tx), txt = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+    if (!txt && j.promptFeedback?.blockReason) throw new Error(`El proveedor ha bloqueado la respuesta (${j.promptFeedback.blockReason}).`);
+    return txt;
+  }
+  const sys = sysDe(msgs), mm = agrupa(msgs, 'assistant').map(m => ({role: m.role, content: m.parts.map(p => p.t === 'text' ? {type: 'text', text: p.v} : {type: 'image', source: {type: 'base64', media_type: p.mime, data: p.data.split(',')[1]}})}));
+  if (json) mm.at(-1).content.push({type: 'text', text: '\n\nResponde SOLO con un objeto JSON válido, sin texto alrededor.'});
+  const r = await conReintentos(() => fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: {'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}, body: JSON.stringify({model: mod, max_tokens: max, system: sys, messages: mm})}), pv);
+  const tx = await r.text(); if (!r.ok) throw httpErr(r.status, tx, pv, mod);
+  return (JSON.parse(tx).content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+}
+async function llmJSON(msgs, o = {}) { for (let k = 0; k < 2; k++) { const j = parseJ(await llm(msgs, {...o, json: true})); if (j && typeof j === 'object') return j; } throw new Error('La IA no devolvió una respuesta con el formato esperado. Inténtalo de nuevo.'); }
+async function listaModelos(pv = getProv()) {
+  const key = getKey(pv); if (!key) throw new Error('Primero pega tu clave.'); let r;
+  try {
+    if (pv === 'openai') r = await fetch('https://api.openai.com/v1/models', {headers: {Authorization: 'Bearer ' + key}});
+    else if (pv === 'gemini') r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100', {headers: {'x-goog-api-key': key}});
+    else r = await fetch('https://api.anthropic.com/v1/models?limit=100', {headers: {'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}});
+  } catch { throw new Error(`No hay conexión con ${PROV[pv].n}.`); }
+  const tx = await r.text(); if (!r.ok) throw httpErr(r.status, tx, pv, ''); const j = JSON.parse(tx);
+  if (pv === 'openai') return (j.data || []).map(m => m.id).filter(id => /^(gpt-|o\d|chatgpt-)/.test(id) && !/(audio|realtime|transcribe|tts|image|embedding|moderation|search|instruct|whisper|dall|davinci|babbage|codex|computer-use)/i.test(id)).sort();
+  if (pv === 'gemini') return (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace(/^models\//, '')).sort();
+  return (j.data || []).map(m => m.id).sort();
+}
+
+/* ── verificación por código de lo que dice la IA, anonimización y Markdown seguro ──────────────────────────
+   Principio: la IA propone, el código comprueba. Nunca muestres como hecho una cita, una cifra o un recuento
+   que la IA afirme sin haberlo contrastado con el texto de origen. */
+
+/* texto normalizado con mapa a las posiciones originales */
+function normMap(s) {
+  let n = ''; const map = []; let sp = true;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (/[\p{L}\p{N}]/u.test(c)) { for (const ch of c) { n += ch; map.push(i); } sp = false; }
+    else if (!sp) { n += ' '; map.push(i); sp = true; }
+  }
+  return {n, map};
+}
+let _nm = null;
+const nmat = mat => { if (!_nm || _nm.src !== mat) _nm = {src: mat, ...normMap(mat)}; return _nm; };
+/* ¿aparece la cita (literal, ignorando mayúsculas, tildes y puntuación) en el material? */
+function localiza(mat, cita, minLen = 12) { const q = norm(cita); if (q.length < minLen) return null; const m = nmat(mat), i = m.n.indexOf(q); return i < 0 ? null : [m.map[i], m.map[Math.min(i + q.length - 1, m.map.length - 1)]]; }
+const esFiel = (mat, cita) => !!localiza(mat, cita);
+/* extractos del material alrededor de las citas (para dar contexto sin enviar todo) */
+function ventanas(mat, citas, rad = 700, tope = 4200) {
+  const r = citas.map(c => localiza(mat, c)).filter(Boolean).map(([a, b]) => [Math.max(0, a - rad), Math.min(mat.length, b + rad)]).sort((x, y) => x[0] - y[0]), m = [];
+  for (const v of r) { const l = m.at(-1); if (l && v[0] <= l[1]) l[1] = Math.max(l[1], v[1]); else m.push([...v]); }
+  const t = m.map(([a, b]) => mat.slice(a, b).trim()).join('\n[…]\n'); return t.length > tope ? t.slice(0, tope) : t;
+}
+/* cifras que la IA menciona y no están en el material (ignora números pequeños) */
+const numsDe = t => new Set((String(t).match(/\d+(?:[.,]\d+)?/g) || []).map(x => x.replace(',', '.')));
+function numerosNuevos(texto, mat) { const m = numsDe(mat); return [...numsDe(texto)].filter(x => !m.has(x) && parseFloat(x) > 12); }
+
+/* datos personales: se enmascaran antes de enviar nada a un proveedor externo */
+const PII = [['CORREO', /[\w.+-]+@[\w-]+\.[\w.-]+/g], ['ID', /\b\d{8}[A-HJ-NP-TV-Z]\b|\b[XYZ]\d{7}[A-Z]\b/gi], ['TELÉFONO', /(?:\+\d{2}\s?)?\b[6-9]\d{2}[\s.-]?\d{3}[\s.-]?\d{3}\b/g]];
+function scrub(txt, nombre = '') {
+  let n = 0, t = String(txt ?? ''); PII.forEach(([tag, rx]) => { t = t.replace(rx, () => { n++; return `[${tag}]`; }); });
+  const nm = new Set(norm(nombre).split(' ').filter(w => w.length >= 3));
+  t = t.replace(/[\p{L}][\p{L}'’-]*/gu, w => nm.has(norm(w)) ? (n++, '[PERSONA]') : w);
+  return {t, n};
+}
+const cuentaPII = txt => PII.reduce((n, [, rx]) => n + ((String(txt).match(rx) || []).length), 0);
+
+/* Markdown mínimo y seguro (escapa antes de formatear) */
+function md(s) {
+  const inl = x => esc(x).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])\*([^*\n]+)\*/g, '$1<i>$2</i>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  const out = []; let lst = null; const cierra = () => { if (lst) { out.push(`</${lst}>`); lst = null; } };
+  for (const raw of String(s || '').split('\n')) {
+    const l = raw.trimEnd(); let m; if (!l.trim()) { cierra(); continue; }
+    if (m = l.match(/^#{1,4}\s+(.*)/)) { cierra(); out.push(`<h4>${inl(m[1])}</h4>`); continue; }
+    if (m = l.match(/^\s*[-*•]\s+(.*)/)) { if (lst !== 'ul') { cierra(); out.push('<ul>'); lst = 'ul'; } out.push(`<li>${inl(m[1])}</li>`); continue; }
+    if (m = l.match(/^\s*\d+[.)]\s+(.*)/)) { if (lst !== 'ol') { cierra(); out.push('<ol>'); lst = 'ol'; } out.push(`<li>${inl(m[1])}</li>`); continue; }
+    cierra(); out.push(`<p>${inl(l)}</p>`);
+  }
+  cierra(); return out.join('');
+}
+
+/* ── navegación Forja: barra superior, stepper, barra inferior, ventanas, ayuda y ajustes de IA ─────────────
+   La app define (en app.js; se leen al ejecutar, no al cargar el módulo) y llama a iniciaUI() al arrancar:
+     const STEPS  = ['Inicio', 'Paso 1', ...];                   // etiquetas del stepper (la actual se muestra con nombre)
+     const NAV    = [['Empezar',''], ['Siguiente: …','pista'], …]; // [texto del botón «siguiente», pista de la barra inferior] por pantalla
+     const RENDER = {0: pintaInicio, 1: pintaX, …};               // funciones que pintan cada pantalla al entrar
+     const GLOS   = [['Título','Texto'], …];                       // ayuda
+   Opcionales:  const CAN_NEXT = i => true|'mensaje';  // validación antes de avanzar  */
+let step = 0;
+function buildStepper() {
+  $('stepper').innerHTML = STEPS.map((s, i) => `${i ? `<span class="sline${i <= step ? ' on' : ''}"></span>` : ''}<button class="sdot" type="button" data-go="${i}" data-state="${i < step ? 'done' : i === step ? 'now' : ''}" ${i === step ? 'aria-current="step"' : ''}><span class="n">${i < step ? ico('check') : i === 0 ? ico(typeof LOGO_ICON === 'string' ? LOGO_ICON : 'bulb') : i}</span><span class="lbl">${esc(s)}</span></button>`).join('');
+  $$('#stepper [data-go]').forEach(b => b.onclick = () => go(+b.dataset.go));
+}
+function updateNav() { $('navBack').classList.toggle('hidden', step === 0); $('navNextTxt').textContent = NAV[step][0]; $('navHint').textContent = NAV[step][1] || ''; }
+function go(i) {
+  step = i; $$('.screen').forEach(s => s.classList.toggle('on', +s.dataset.step === i)); $('progBar').style.width = (i / (STEPS.length - 1) * 100) + '%';
+  (RENDER[i] || (() => {}))(); buildStepper(); updateNav(); window.scrollTo({top: 0, behavior: 'instant'});
+}
+$('goHome').onclick = () => go(0);
+$('navBack').onclick = () => { if (step > 0) go(step - 1); };
+$('navNext').onclick = () => { const ok = typeof CAN_NEXT === 'function' ? CAN_NEXT(step) : true; if (ok !== true && ok) return toast(ok); go(step === STEPS.length - 1 ? 0 : step + 1); };
+
+/* ventanas modales (Escape y clic fuera cierran; data-close en el botón) */
+const _cierres = {};   // id de modal → función a ejecutar al cerrar
+$$('.modal').forEach(m => m.addEventListener('click', ev => { if (ev.target === m || ev.target.hasAttribute('data-close')) { m.classList.remove('on'); _cierres[m.id]?.(); } }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $$('.modal.on').forEach(m => { m.classList.remove('on'); _cierres[m.id]?.(); }); });
+function cargaIA() { const pv = getProv(); $('selProv').value = pv; $('apiKey').value = getKey(pv); $('apiKey').placeholder = KPH[pv]; $('modelo').value = getMod(pv); let ml = []; try { ml = JSON.parse(localStorage.getItem(APP + '_models_' + pv) || '[]'); } catch {} $('modelos').innerHTML = [...new Set([PROV[pv].m, ...ml])].map(m => `<option value="${esc(m)}">`).join(''); }
+const KPH = {openai: 'sk-proj-…', gemini: 'AIza…', anthropic: 'sk-ant-…'};
+/* iniciaUI(): llámala UNA vez desde app.js, al final, justo antes de go(0). Enlaza la ayuda y los ajustes de IA.
+   (No se hace al cargar el módulo porque GLOS y el resto de constantes de la app aún no existen en ese momento.) */
+function iniciaUI() {
+  if ($('btnHelp')) { $('glos').innerHTML = (typeof GLOS !== 'undefined' ? GLOS : []).map(g => `<div><b>${esc(g[0])}</b><span>${esc(g[1])}</span></div>`).join(''); $('btnHelp').onclick = () => $('mHelp').classList.add('on'); }
+  if ($('btnIA')) {
+    $('btnIA').onclick = () => { cargaIA(); $('mIA').classList.add('on'); };
+    $('selProv').onchange = () => { localStorage.setItem(APP + '_prov', $('selProv').value); cargaIA(); };
+    $('apiKey').oninput = () => localStorage.setItem(PROV[getProv()].k, $('apiKey').value.trim());
+    $('modelo').oninput = () => localStorage.setItem(APP + '_model_' + getProv(), $('modelo').value.trim() || PROV[getProv()].m);
+    $('btnEye').onclick = () => { const k = $('apiKey'); k.type = k.type === 'password' ? 'text' : 'password'; };
+    $('btnModelos').onclick = async () => { const st = $('iaEstado'), pv = getProv(); st.textContent = '…'; try { const l = await listaModelos(pv); localStorage.setItem(APP + '_models_' + pv, JSON.stringify(l)); $('modelos').innerHTML = l.map(m => `<option value="${esc(m)}">`).join(''); st.textContent = `${l.length} modelos disponibles en tu clave; escribe o elige uno.`; } catch (e) { st.textContent = e.message; } };
+  }
+}
+/* ¿hay clave? si no, abre los ajustes de IA y avisa */
+function pideClave() { if (getKey()) return true; if ($('mIA')) { cargaIA(); $('mIA').classList.add('on'); } toast('Pega tu clave de IA para continuar'); return false; }
+
+/* ── salidas: Word desde Markdown y ZIP. Se cargan docx y JSZip desde cdnjs solo cuando hacen falta ────────── */
+/* wordDeMarkdown(md, {titulo, subtitulo, pie, kicker}) → Blob .docx
+   Convierte ## encabezados, listas y **negritas**; lo demás va como párrafos. */
+async function wordDeMarkdown(md, {titulo = '', subtitulo = '', pie = '', kicker = ''} = {}) {
+  await cargaLib([LIB.docx]); const X = window.docx;
+  const runs = (tx, base = {}) => String(tx).split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(p => p.startsWith('**') ? new X.TextRun({text: p.slice(2, -2), font: 'Arial', size: 22, bold: true, ...base}) : new X.TextRun({text: p, font: 'Arial', size: 22, ...base}));
+  const P = (tx, o = {}) => new X.Paragraph({heading: o.h, alignment: o.c ? X.AlignmentType.CENTER : undefined, spacing: {after: o.after ?? 110}, indent: o.ind ? {left: o.ind} : undefined, children: o.plain ? [new X.TextRun({text: String(tx), font: 'Arial', size: o.s || 22, bold: o.b, italics: o.i, color: o.col})] : runs(tx, {italics: o.i, color: o.col})});
+  const k = [];
+  if (kicker) k.push(P(kicker.toUpperCase(), {c: true, b: true, col: 'E4572E', s: 20, plain: true}));
+  if (titulo) k.push(P(titulo, {c: true, b: true, s: 32, plain: true}));
+  if (subtitulo) k.push(P(subtitulo, {c: true, col: '5D7691', s: 20, after: 260, plain: true}));
+  for (const l of String(md).split('\n')) {
+    const t = l.trimEnd(); if (!t.trim()) continue; let m;
+    if (m = t.match(/^#{1,4}\s+(.*)/)) k.push(P(m[1].replace(/\*\*/g, ''), {h: X.HeadingLevel.HEADING_1, plain: true}));
+    else if (m = t.match(/^\s*[-*•]\s+(.*)/)) k.push(P('•  ' + m[1], {ind: 360, after: 60}));
+    else if (m = t.match(/^\s*(\d+[.)])\s+(.*)/)) k.push(P(m[1] + '  ' + m[2], {ind: 360, after: 60}));
+    else k.push(P(t));
+  }
+  if (pie) k.push(P(pie, {i: true, s: 16, col: '8899AA', plain: true}));
+  return X.Packer.toBlob(new X.Document({creator: typeof APP_NAME === 'string' ? APP_NAME : APP, sections: [{children: k}]}));
+}
+/* zipDe({'nombre.ext': Blob|string, …}) → Blob .zip */
+async function zipDe(ficheros) { await cargaLib([LIB.jszip]); const z = new JSZip(); for (const [n, c] of Object.entries(ficheros)) z.file(n, c); return z.generateAsync({type: 'blob', compression: 'DEFLATE'}); }
+/* csv con BOM, separador «;» (Excel en español) y comillas escapadas */
+const csvq = v => { const s = String(v ?? ''); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const csvDe = (cab, filas) => '\ufeff' + [cab, ...filas].map(f => f.map(csvq).join(';')).join('\r\n');
+
+/* Datos ficticios con verdad conocida y salidas precalculadas del ejemplo (generado por gen.py). */
+const DATOS={"abstracts": [{"id": "E01", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 64 adultos con hipertensión arterial de grado 1 o 2. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 12 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 64, "intervencion": "ejercicio aeróbico supervisado", "incluir": true, "resultado": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 12}}, {"id": "E02", "titulo": "Entrenamiento de fuerza y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del entrenamiento de fuerza sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 120 adultos con hipertensión arterial de grado 1 o 2. Intervención: Entrenamiento de fuerza con bandas elásticas, dos sesiones semanales, durante 16 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.03). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 120, "intervencion": "entrenamiento de fuerza", "incluir": true, "resultado": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.03).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 16}}, {"id": "E03", "titulo": "Actividad física y presión arterial en adultos hipertensos (cohortes)", "texto": "Objetivo: describir la relación entre la actividad física y la presión arterial. Diseño: estudio de cohortes prospectivo. Participantes: Se siguió a 850 adultos con hipertensión arterial de grado 1 o 2. Intervención: No hubo intervención: se midió la actividad física habitual con acelerómetro durante un seguimiento medio de 5 años. Resultados: Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.02). Conclusión: Los resultados sugieren una asociación inversa, no necesariamente causal.", "truth": {"diseno": "cohortes", "n": 850, "intervencion": "ninguna", "incluir": false, "resultado": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.02).", "motivo": "Excluido por el diseño: es estudio de cohortes prospectivo.", "sem": 5}}, {"id": "E04", "titulo": "Ejercicio aeróbico y presión arterial en adultos normotensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 48 adultos normotensos y sedentarios. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 8 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 3 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.20). Conclusión: No se observó una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 48, "intervencion": "ejercicio aeróbico supervisado", "incluir": false, "resultado": "La presión arterial sistólica descendió 3 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.20).", "motivo": "Excluido por la población: adultos normotensos.", "sem": 8}}, {"id": "E05", "titulo": "Dieta DASH y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto de la dieta sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 90 adultos con hipertensión arterial de grado 1 o 2. Intervención: Dieta de estilo DASH con asesoramiento dietético durante 12 semanas, frente a la dieta habitual. Resultados: La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 90, "intervencion": "dieta DASH", "incluir": false, "resultado": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01).", "motivo": "Excluido por la intervención: dieta DASH.", "sem": 12}}, {"id": "E06", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 72 adultos con hipertensión arterial de grado 1 o 2. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 24 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 10 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 72, "intervencion": "ejercicio aeróbico supervisado", "incluir": true, "resultado": "La presión arterial sistólica descendió 10 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 24}}, {"id": "E07", "titulo": "Actividad física y presión arterial en adultos hipertensos (transversal)", "texto": "Objetivo: describir la relación entre la actividad física y la presión arterial. Diseño: estudio transversal. Participantes: Se analizaron 1530 adultos con hipertensión arterial de grado 1 o 2. Intervención: No hubo intervención: se registró la actividad física autodeclarada mediante cuestionario. Resultados: La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.04). Conclusión: El diseño no permite establecer causalidad.", "truth": {"diseno": "transversal", "n": 1530, "intervencion": "ninguna", "incluir": false, "resultado": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.04).", "motivo": "Excluido por el diseño: es estudio transversal.", "sem": 0}}, {"id": "E08", "titulo": "Ejercicio aeróbico y presión arterial en escolares (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 36 escolares de 9 a 12 años. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 10 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.30). Conclusión: No se observó una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 36, "intervencion": "ejercicio aeróbico supervisado", "incluir": false, "resultado": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.30).", "motivo": "Excluido por la población: escolares.", "sem": 10}}, {"id": "E09", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 150 adultos con hipertensión arterial de grado 1 o 2. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 12 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 7 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 150, "intervencion": "ejercicio aeróbico supervisado", "incluir": true, "resultado": "La presión arterial sistólica descendió 7 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 12}}, {"id": "E10", "titulo": "Actividad física y presión arterial en adultos hipertensos (casos y controles)", "texto": "Objetivo: describir la relación entre la actividad física y la presión arterial. Diseño: estudio de casos y controles. Participantes: Se compararon 210 adultos con hipertensión arterial de grado 1 o 2 con y sin eventos cardiovasculares. Intervención: No hubo intervención: se revisó retrospectivamente la práctica de ejercicio. Resultados: La inactividad física se asoció con más eventos en los casos (p=0.03). Conclusión: La asociación puede estar afectada por sesgo de recuerdo.", "truth": {"diseno": "casos y controles", "n": 210, "intervencion": "ninguna", "incluir": false, "resultado": "La inactividad física se asoció con más eventos en los casos (p=0.03).", "motivo": "Excluido por el diseño: es estudio de casos y controles.", "sem": 0}}, {"id": "E11", "titulo": "Ejercicio aeróbico y presión arterial en adultos con diabetes tipo 2 (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 58 adultos con diabetes tipo 2 y presión arterial normal. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 12 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 4 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.08). Conclusión: No se observó una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 58, "intervencion": "ejercicio aeróbico supervisado", "incluir": false, "resultado": "La presión arterial sistólica descendió 4 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.08).", "motivo": "Excluido por la población: adultos con diabetes tipo 2.", "sem": 12}}, {"id": "E12", "titulo": "Entrenamiento de fuerza y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del entrenamiento de fuerza sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 84 adultos con hipertensión arterial de grado 1 o 2. Intervención: Entrenamiento de fuerza con bandas elásticas, dos sesiones semanales, durante 20 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 5 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.04). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 84, "intervencion": "entrenamiento de fuerza", "incluir": true, "resultado": "La presión arterial sistólica descendió 5 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.04).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 20}}, {"id": "E13", "titulo": "Un antihipertensivo y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar la eficacia de un antihipertensivo. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 40 adultos con hipertensión arterial de grado 1 o 2. Intervención: Un antihipertensivo de nueva generación durante 8 semanas, frente a placebo. Resultados: La presión arterial sistólica descendió 14 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.001). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 40, "intervencion": "antihipertensivo", "incluir": false, "resultado": "La presión arterial sistólica descendió 14 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.001).", "motivo": "Excluido por la intervención: antihipertensivo.", "sem": 8}}, {"id": "E14", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 110 adultos con hipertensión arterial de grado 1 o 2. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 8 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 110, "intervencion": "ejercicio aeróbico supervisado", "incluir": true, "resultado": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 8}}, {"id": "E15", "titulo": "Actividad física y presión arterial en adultos normotensos (cohortes)", "texto": "Objetivo: describir la relación entre la actividad física y la presión arterial. Diseño: estudio de cohortes prospectivo. Participantes: Se siguió a 420 adultos normotensos y sedentarios. Intervención: No hubo intervención: se midió la actividad física habitual con acelerómetro durante un seguimiento medio de 7 años. Resultados: Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.05). Conclusión: Los resultados sugieren una asociación inversa, no necesariamente causal.", "truth": {"diseno": "cohortes", "n": 420, "intervencion": "ninguna", "incluir": false, "resultado": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.05).", "motivo": "Excluido por el diseño: es estudio de cohortes prospectivo.", "sem": 7}}, {"id": "E16", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos: revisión sistemática", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: revisión sistemática de ensayos. Participantes: Se incluyeron 14 ensayos con 1052 participantes en total. Intervención: Programas de ejercicio aeróbico de entre 8 y 24 semanas. Resultados: El ejercicio aeróbico redujo la presión sistólica en promedio 7 mmHg (p=0.01). Conclusión: La heterogeneidad entre ensayos fue moderada.", "truth": {"diseno": "revisión sistemática", "n": 14, "intervencion": "ejercicio aeróbico supervisado", "incluir": false, "resultado": "El ejercicio aeróbico redujo la presión sistólica en promedio 7 mmHg (p=0.01).", "motivo": "Excluido por el diseño: es revisión sistemática de ensayos.", "sem": 0}}, {"id": "E17", "titulo": "Ejercicio aeróbico y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto del ejercicio aeróbico sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 66 adultos con hipertensión arterial de grado 1 o 2. Intervención: Programa de ejercicio aeróbico supervisado (caminar rápido o bicicleta, tres sesiones semanales) durante 16 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 66, "intervencion": "ejercicio aeróbico supervisado", "incluir": true, "resultado": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01).", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "sem": 16}}, {"id": "E18", "titulo": "Entrenamiento de fuerza y presión arterial en adultos normotensos (ECA)", "texto": "Objetivo: evaluar el efecto del entrenamiento de fuerza sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 52 adultos normotensos y sedentarios. Intervención: Entrenamiento de fuerza con bandas elásticas, dos sesiones semanales, durante 12 semanas, frente a atención habitual. Resultados: La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.40). Conclusión: No se observó una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 52, "intervencion": "entrenamiento de fuerza", "incluir": false, "resultado": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.40).", "motivo": "Excluido por la población: adultos normotensos.", "sem": 12}}, {"id": "E19", "titulo": "Actividad física y presión arterial en adultos con diabetes tipo 2 (transversal)", "texto": "Objetivo: describir la relación entre la actividad física y la presión arterial. Diseño: estudio transversal. Participantes: Se analizaron 980 adultos con diabetes tipo 2 y presión arterial normal. Intervención: No hubo intervención: se registró la actividad física autodeclarada mediante cuestionario. Resultados: La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.06). Conclusión: El diseño no permite establecer causalidad.", "truth": {"diseno": "transversal", "n": 980, "intervencion": "ninguna", "incluir": false, "resultado": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.06).", "motivo": "Excluido por el diseño: es estudio transversal.", "sem": 0}}, {"id": "E20", "titulo": "Dieta DASH y presión arterial en adultos hipertensos (ECA)", "texto": "Objetivo: evaluar el efecto de la dieta sobre la presión arterial. Diseño: ensayo clínico aleatorizado y controlado. Participantes: Se incluyeron 76 adultos con hipertensión arterial de grado 1 o 2. Intervención: Dieta de estilo DASH con asesoramiento dietético durante 10 semanas, frente a la dieta habitual. Resultados: La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02). Conclusión: La intervención se asoció con una reducción clínicamente relevante.", "truth": {"diseno": "ECA", "n": 76, "intervencion": "dieta DASH", "incluir": false, "resultado": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02).", "motivo": "Excluido por la intervención: dieta DASH.", "sem": 10}}], "entrevistas": [{"id": "I01", "texto": "Me llamo Carmen Soler Vidal y vivo en Mutxamel. Para conseguir cita con la doctora Ruiz en el centro de salud de Sant Joan tengo que llamar a las ocho en punto y casi nunca hay hueco. Mi hija Lucía me acompaña cuando puede; sin ella no iría. Si necesita algo, mi teléfono es 655 123 456.", "pii": [["Carmen Soler Vidal", "P"], ["Mutxamel", "L"], ["Ruiz", "P"], ["Sant Joan", "L"], ["Lucía", "P"], ["655 123 456", null]], "codes": [["BAR", "tengo que llamar a las ocho en punto y casi nunca hay hueco"], ["APO", "Mi hija Lucía me acompaña cuando puede; sin ella no iría"]], "truth": {"codigos": ["APO", "BAR"], "pii": ["Carmen Soler Vidal", "Mutxamel", "Ruiz", "Sant Joan", "Lucía", "655 123 456"]}, "pii_list": ["Carmen Soler Vidal", "Mutxamel", "Ruiz", "Sant Joan", "Lucía", "655 123 456"]}, {"id": "I02", "texto": "Con el doctor Pastor me siento escuchado; me explica todo sin prisas y eso me hace tomar la medicación. Antes, en Elche, tenía otro médico que ni me miraba. Escríbame a javier.mora@correo.example si quiere más detalles. Soy Javier Mora Pons.", "pii": [["Pastor", "P"], ["Elche", "L"], ["javier.mora@correo.example", null], ["Javier Mora Pons", "P"]], "codes": [["CON", "me explica todo sin prisas y eso me hace tomar la medicación"]], "truth": {"codigos": ["CON"], "pii": ["Pastor", "Elche", "javier.mora@correo.example", "Javier Mora Pons"]}, "pii_list": ["Pastor", "Elche", "javier.mora@correo.example", "Javier Mora Pons"]}, {"id": "I03", "texto": "Los fármacos me cuestan casi cuarenta euros al mes y mi pensión no da para más; algunos meses dejo de comprar uno. Mi vecina Rosa Candela me recoge en coche porque el autobús a Orihuela es caro y pasa poco. DNI 21345678Z.", "pii": [["Rosa Candela", "P"], ["Orihuela", "L"], ["21345678Z", null]], "codes": [["ECO", "Los fármacos me cuestan casi cuarenta euros al mes y mi pensión no da para más"], ["APO", "Mi vecina Rosa Candela me recoge en coche"], ["BAR", "el autobús a Orihuela es caro y pasa poco"]], "truth": {"codigos": ["APO", "BAR", "ECO"], "pii": ["Rosa Candela", "Orihuela", "21345678Z"]}, "pii_list": ["Rosa Candela", "Orihuela", "21345678Z"]}, {"id": "I04", "texto": "En el grupo de caminantes del barrio de San Antón hemos creado una pequeña comunidad; nos animamos unos a otros a medirnos la tensión. La enfermera Pilar Ortuño me enseñó a hacerlo y confío en ella plenamente. Soy Antonio Gil.", "pii": [["San Antón", "L"], ["Pilar Ortuño", "P"], ["Antonio Gil", "P"]], "codes": [["APO", "nos animamos unos a otros a medirnos la tensión"], ["CON", "me enseñó a hacerlo y confío en ella plenamente"]], "truth": {"codigos": ["APO", "CON"], "pii": ["San Antón", "Pilar Ortuño", "Antonio Gil"]}, "pii_list": ["San Antón", "Pilar Ortuño", "Antonio Gil"]}, {"id": "I05", "texto": "Trabajo en turnos y el centro de salud solo abre por la mañana, así que pierdo medio día de sueldo cada vez que voy. Me dijeron en el Hospital General de Elda que podía pedir cita por la aplicación, pero no me aclaro. Me llamo Marta Jover.", "pii": [["Hospital General de Elda", "L"], ["Marta Jover", "P"]], "codes": [["BAR", "el centro de salud solo abre por la mañana"], ["ECO", "pierdo medio día de sueldo cada vez que voy"]], "truth": {"codigos": ["BAR", "ECO"], "pii": ["Hospital General de Elda", "Marta Jover"]}, "pii_list": ["Hospital General de Elda", "Marta Jover"]}, {"id": "I06", "texto": "No me fío mucho de las recetas que me dan en urgencias, cambian cada vez. Mi marido, Tomás Belda, dice que lo deje estar, pero yo prefiero ir a mi médico de siempre, el doctor Navarro, de Crevillent. Mi móvil: 666 987 654.", "pii": [["Tomás Belda", "P"], ["Navarro", "P"], ["Crevillent", "L"], ["666 987 654", null]], "codes": [["CON", "yo prefiero ir a mi médico de siempre"]], "truth": {"codigos": ["CON"], "pii": ["Tomás Belda", "Navarro", "Crevillent", "666 987 654"]}, "pii_list": ["Tomás Belda", "Navarro", "Crevillent", "666 987 654"]}], "criterios": "Incluir solo si se cumplen las tres condiciones: (1) ensayo clínico aleatorizado; (2) población de adultos con hipertensión arterial; (3) intervención basada en ejercicio físico. Si falta cualquiera, excluir. Si el resumen no permite decidir, responde «dudoso».", "codigos": {"BAR": "Barreras de acceso (citas, horarios, distancia, transporte)", "APO": "Apoyo social (familia, vecinos, grupos)", "CON": "Confianza en el profesional (trato, escucha, continuidad)", "ECO": "Carga económica (coste de medicación, pérdida de ingresos)"}};
+const EJEMPLO_RAW={"local": {"t1": {"I01": {"texto": "Me llamo [PERSONA_1] y vivo en [LUGAR_2]. Para conseguir cita con la doctora [PERSONA_3] en el centro de salud de [LUGAR_1] tengo que llamar a las ocho en punto y casi nunca hay hueco. Mi hija [PERSONA_2] me acompaña cuando puede; sin ella no iría. Si necesita algo, mi teléfono es [TELÉFONO]."}, "I02": {"texto": "Con el doctor Pastor me siento escuchado; me explica todo sin prisas y eso me hace tomar la medicación. Antes, en [LUGAR_1], tenía otro médico que ni me miraba. Escríbame a [CORREO] si quiere más detalles. Soy [PERSONA_1]."}, "I03": {"texto": "Los fármacos me cuestan casi cuarenta euros al mes y mi pensión no da para más; algunos meses dejo de comprar uno. Mi vecina [PERSONA_1] me recoge en coche porque el autobús a [LUGAR_1] es caro y pasa poco. DNI [ID]."}, "I04": {"texto": "En el grupo de caminantes del barrio de [LUGAR_1] hemos creado una pequeña comunidad; nos animamos unos a otros a medirnos la tensión. La enfermera [PERSONA_1] me enseñó a hacerlo y confío en ella plenamente. Soy [PERSONA_2]."}, "I05": {"texto": "Trabajo en turnos y el centro de salud solo abre por la mañana, así que pierdo medio día de sueldo cada vez que voy. Me dijeron en el [LUGAR_1] que podía pedir cita por la aplicación, pero no me aclaro. Me llamo [PERSONA_1]."}, "I06": {"texto": "No me fío mucho de las recetas que me dan en urgencias, cambian cada vez. Mi marido, [PERSONA_1], dice que lo deje estar, pero yo prefiero ir a mi médico de siempre, el doctor [PERSONA_2], de Crevillent. Mi móvil: [TELÉFONO]."}}, "t2": {"E01": {"diseno": "ECA", "n": 64, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01)."}, "E02": {"diseno": "ECA", "n": 120, "poblacion": "adultos hipertensos", "intervencion": "entrenamiento de fuerza", "resultado_principal": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.03)."}, "E03": {"diseno": "cohortes", "n": 850, "poblacion": "adultos hipertensos", "intervencion": "ninguna", "resultado_principal": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.02)."}, "E04": {"diseno": "ECA", "n": 48, "poblacion": "adultos normotensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 3 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.20)."}, "E05": {"diseno": "ECA", "n": 12, "poblacion": "adultos hipertensos", "intervencion": "dieta DASH", "resultado_principal": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01)."}, "E06": {"diseno": "ECA", "n": 72, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 10 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01)."}, "E07": {"diseno": "ECA", "n": 1530, "poblacion": "adultos hipertensos", "intervencion": "ninguna", "resultado_principal": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.04)."}, "E08": {"diseno": "ECA", "n": 36, "poblacion": "escolares", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.30)."}, "E09": {"diseno": "ECA", "n": 150, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 7 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}, "E10": {"diseno": "casos y controles", "n": 210, "poblacion": "adultos hipertensos", "intervencion": "ninguna", "resultado_principal": "La inactividad física se asoció con más eventos en los casos (p=0.03)."}, "E11": {"diseno": "ECA", "n": 58, "poblacion": "adultos con diabetes tipo 2", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La intervención redujo algo la presión en personas con diabetes"}, "E12": {"diseno": "ECA", "n": 84, "poblacion": "adultos hipertensos", "intervencion": "entrenamiento de fuerza", "resultado_principal": "La presión arterial sistólica descendió 5 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.04)."}, "E13": {"diseno": "ECA", "n": 40, "poblacion": "adultos hipertensos", "intervencion": "antihipertensivo", "resultado_principal": "La presión arterial sistólica descendió 14 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.001)."}, "E14": {"diseno": "ECA", "n": 110, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}, "E15": {"diseno": "cohortes", "n": 420, "poblacion": "adultos normotensos", "intervencion": "ninguna", "resultado_principal": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.05)."}, "E16": {"diseno": "revisión sistemática", "n": 1052, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "El ejercicio aeróbico redujo la presión sistólica en promedio 7 mmHg (p=0.01)."}, "E17": {"diseno": "ECA", "n": 66, "poblacion": "adultos hipertensos", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01)."}, "E18": {"diseno": "ECA", "n": 52, "poblacion": "adultos normotensos", "intervencion": "entrenamiento de fuerza", "resultado_principal": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.40)."}, "E19": {"diseno": "transversal", "n": 980, "poblacion": "adultos con diabetes tipo 2", "intervencion": "ninguna", "resultado_principal": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.06)."}, "E20": {"diseno": "ECA", "n": 76, "poblacion": "adultos hipertensos", "intervencion": "dieta DASH", "resultado_principal": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}}, "t3": {"E01": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01)."}, "E02": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.03)."}, "E03": {"decision": "excluir", "motivo": "Excluido por el diseño: es estudio de cohortes prospectivo.", "cita": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.02)."}, "E04": {"decision": "excluir", "motivo": "Excluido por la población: adultos normotensos.", "cita": "La presión arterial sistólica descendió 3 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.20)."}, "E05": {"decision": "excluir", "motivo": "Excluido por la intervención: dieta DASH.", "cita": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01)."}, "E06": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 10 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.01)."}, "E07": {"decision": "excluir", "motivo": "Excluido por el diseño: es estudio transversal.", "cita": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.04)."}, "E08": {"decision": "excluir", "motivo": "Excluido por la población: escolares.", "cita": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.30)."}, "E09": {"decision": "excluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 7 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}, "E10": {"decision": "excluir", "motivo": "Excluido por el diseño: es estudio de casos y controles.", "cita": "La inactividad física se asoció con más eventos en los casos (p=0.03)."}, "E11": {"decision": "excluir", "motivo": "Excluido por la población: adultos con diabetes tipo 2.", "cita": "La presión arterial sistólica descendió 4 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.08)."}, "E12": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 5 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.04)."}, "E13": {"decision": "incluir", "motivo": "Excluido por la intervención: antihipertensivo.", "cita": "La presión arterial sistólica descendió 14 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.001)."}, "E14": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 6 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}, "E15": {"decision": "excluir", "motivo": "Excluido por el diseño: es estudio de cohortes prospectivo.", "cita": "Cada 1000 pasos diarios adicionales se asociaron con un riesgo de hipertensión un 6 % menor (p=0.05)."}, "E16": {"decision": "excluir", "motivo": "Excluido por el diseño: es revisión sistemática de ensayos.", "cita": "El ejercicio aeróbico redujo la presión sistólica en promedio 7 mmHg (p=0.01)."}, "E17": {"decision": "incluir", "motivo": "Cumple los tres criterios: ECA, adultos hipertensos e intervención de ejercicio.", "cita": "La presión arterial sistólica descendió 9 mmHg en el grupo de intervención frente a 3 mmHg en el control (p=0.01)."}, "E18": {"decision": "excluir", "motivo": "Excluido por la población: adultos normotensos.", "cita": "El entrenamiento no mejoró la presión en sanos"}, "E19": {"decision": "excluir", "motivo": "Excluido por el diseño: es estudio transversal.", "cita": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.06)."}, "E20": {"decision": "dudoso", "motivo": "Excluido por la intervención: dieta DASH.", "cita": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}}, "t4": {"I01": {"codigos": [{"codigo": "BAR", "cita": "tengo que llamar a las ocho en punto y casi nunca hay hueco"}, {"codigo": "APO", "cita": "Mi hija Lucía me acompaña cuando puede; sin ella no iría"}]}, "I02": {"codigos": [{"codigo": "CON", "cita": "me explica todo sin prisas y eso me hace tomar la medicación"}]}, "I03": {"codigos": [{"codigo": "ECO", "cita": "Los fármacos me cuestan casi cuarenta euros al mes y mi pensión no da para más"}, {"codigo": "BAR", "cita": "el autobús a Orihuela es caro y pasa poco"}]}, "I04": {"codigos": [{"codigo": "APO", "cita": "nos animamos unos a otros a medirnos la tensión"}, {"codigo": "CON", "cita": "me enseñó a hacerlo y confío en ella plenamente"}]}, "I05": {"codigos": [{"codigo": "BAR", "cita": "el centro de salud solo abre por la mañana"}, {"codigo": "ECO", "cita": "Perder medio día de sueldo supone un problema económico"}]}, "I06": {"codigos": [{"codigo": "CON", "cita": "yo prefiero ir a mi médico de siempre"}, {"codigo": "APO", "cita": "Mi marido, Tomás Belda, dice que lo deje estar"}]}}}, "api": {"t2": {"E07": {"diseno": "transversal", "n": 1530, "poblacion": "adultos hipertensos", "intervencion": "ninguna", "resultado_principal": "La prevalencia de presión arterial controlada fue mayor entre quienes caminaban a diario (p=0.04)."}, "E11": {"diseno": "ECA", "n": 58, "poblacion": "adultos con diabetes tipo 2", "intervencion": "ejercicio aeróbico supervisado", "resultado_principal": "La presión arterial sistólica descendió 4 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.08)."}}, "t3": {"E18": {"decision": "excluir", "motivo": "Excluido por la población: adultos normotensos.", "cita": "La presión arterial sistólica descendió 2 mmHg en el grupo de intervención frente a 1 mmHg en el control (p=0.40)."}, "E20": {"decision": "excluir", "motivo": "Excluido por la intervención: dieta DASH.", "cita": "La presión arterial sistólica descendió 8 mmHg en el grupo de intervención frente a 2 mmHg en el control (p=0.02)."}}, "t4": {"I05": {"codigos": [{"codigo": "BAR", "cita": "el centro de salud solo abre por la mañana"}, {"codigo": "ECO", "cita": "pierdo medio día de sueldo cada vez que voy"}]}}}, "sint": {"sintesis": "Se identificaron 7 estudios que, según el cribado, evalúan una intervención sobre la presión arterial en adultos hipertensos. El ensayo [E01] incluyó 64 participantes y [E02] incluyó 120; [E14] y [E17] incluyeron 110 y 66. Los programas de ejercicio aeróbico supervisado [E01], [E06], [E14] y [E17] describen descensos de la presión sistólica de entre 6 y 10 mmHg frente al control, y el entrenamiento de fuerza [E02], [E12] describe descensos algo menores. El estudio [E13] evaluó un antihipertensivo, así que su inclusión conviene revisarla antes de interpretar el conjunto.", "estudios_citados": ["E01", "E02", "E06", "E12", "E13", "E14", "E17"]}, "msL": {"t1:I01": 3960, "t1:I02": 3233, "t1:I03": 5333, "t1:I04": 2904, "t1:I05": 4850, "t1:I06": 4135, "t2:E01": 2843, "t2:E02": 4731, "t2:E03": 2757, "t2:E04": 4421, "t2:E05": 2893, "t2:E06": 2980, "t2:E07": 4382, "t2:E08": 6072, "t2:E09": 3119, "t2:E10": 3537, "t2:E11": 5235, "t2:E12": 6580, "t2:E13": 5023, "t2:E14": 4266, "t2:E15": 6700, "t2:E16": 2795, "t2:E17": 6205, "t2:E18": 3816, "t2:E19": 3205, "t2:E20": 3094, "t3:E01": 3895, "t3:E02": 6027, "t3:E03": 3359, "t3:E04": 5042, "t3:E05": 5283, "t3:E06": 4164, "t3:E07": 4900, "t3:E08": 2863, "t3:E09": 2850, "t3:E10": 3465, "t3:E11": 5457, "t3:E12": 4395, "t3:E13": 3919, "t3:E14": 5059, "t3:E15": 4503, "t3:E16": 3859, "t3:E17": 5936, "t3:E18": 5535, "t3:E19": 3625, "t3:E20": 5012, "t4:I01": 4805, "t4:I02": 6275, "t4:I03": 5663, "t4:I04": 3809, "t4:I05": 6716, "t4:I06": 3095}, "msA": {"t2:E07": 1727, "t2:E11": 2235, "t3:E18": 1327, "t3:E20": 1833, "t4:I05": 1158, "t5": 2900}};
+
+/* ══ LocalIA · modelo local (Qwen3-4B) frente a API en tareas de investigación.
+      La IA propone, el código comprueba. Los datos de demostración son ficticios y tienen verdad conocida. ══ */
+const STEPS = ['Inicio', 'Modelo', 'Material', 'Tareas', 'Comparativa'];
+const NAV = [['Empezar', 'El ejemplo no necesita modelo ni clave.'], ['Siguiente: material', 'Carga Qwen3-4B o conecta Ollama.'], ['Siguiente: tareas', 'Datos ficticios o tus textos.'], ['Siguiente: comparativa', 'Ejecuta las tareas y mira dónde falla el modelo local.'], ['Volver al inicio', 'Descarga la tabla en Word, CSV o JSON.']];
+const RENDER = {0: pintaInicio, 1: pintaModelo, 2: pintaMaterial, 3: pintaTareas, 4: pintaComparativa};
+const GLOS = [
+  ['¿Qué hace?', 'Ejecuta cuatro tareas de investigación con un modelo pequeño (Qwen3-4B) que corre en tu equipo, valida cada salida por código y, si falla, la escala a una API o la deja para revisión humana.'],
+  ['Error silencioso', 'Resultado que el código da por válido pero es incorrecto (por ejemplo, el modelo toma el número de semanas como tamaño muestral). Solo se puede contar con los datos ficticios, donde conocemos la respuesta.'],
+  ['Escalado', 'Si la validación falla y lo permites, la tarea se repite con tu API sobre texto enmascarado. La anonimización nunca se escala: lo que falla pasa a revisión humana.'],
+  ['Privacidad', 'El modelo local no envía tus textos a ningún sitio. Solo se descargan el motor y los pesos la primera vez. Antes del primer envío a la API ves lo que saldría.'],
+  ['Límites', 'Es una demostración con 52 casos ficticios. Los porcentajes no se pueden extrapolar a tus datos: repite la prueba con una muestra tuya. La ruta sugerida es una guía, no una garantía.'],
+  ['Tu clave de API', 'Solo hace falta para el escalado y la síntesis. Funciona con OpenAI, Google Gemini o Anthropic Claude y se guarda solo en este navegador.']
+];
+const vacioRes = () => ({t1: {}, t2: {}, t3: {}, t4: {}, t5: null});
+let S = {motor: 'webllm', ollama: {url: 'http://localhost:11434', modelo: 'qwen3:4b'}, mat: 'ficticio', propios: {abs: '', ent: ''}, crit: DATOS.criterios, cod: '', escala: true, res: vacioRes(), precio: {i: '', o: ''}, envioOK: false, esEjemplo: false};
+const codigosTxt = o => Object.entries(o).map(([k, v]) => `${k}: ${v}`).join('\n');
+const parseCod = txt => Object.fromEntries(String(txt).split('\n').map(l => l.match(/^\s*([A-Za-zÁÉÍÓÚÑ0-9_]{2,12})\s*[:：]\s*(.+)$/)).filter(Boolean).map(m => [m[1].toUpperCase(), m[2].trim()]));
+const dividir = (txt, pre) => String(txt).split(/^\s*---\s*$/m).map(s => s.trim()).filter(Boolean).map((t, i) => ({id: pre + String(i + 1).padStart(2, '0'), titulo: t.slice(0, 70), texto: t, truth: null}));
+const esFic = () => S.mat === 'ficticio';
+const ITEMS = {abs: () => esFic() ? DATOS.abstracts : dividir(S.propios.abs, 'R'), ent: () => esFic() ? DATOS.entrevistas : dividir(S.propios.ent, 'I')};
+const CODIGOS = () => esFic() ? DATOS.codigos : parseCod(S.cod);
+const estTok = s => Math.ceil(String(s).length / 4);
+let parar = false, ocupado = false;
+
+/* ── motor local: WebLLM en el navegador u Ollama en el equipo ── */
+const WLV = '0.2.85';
+const LOC = {eng: null, id: '', listo: false};
+async function infoGPU() {
+  if (!navigator.gpu) return {ok: false, msg: 'Este navegador no tiene WebGPU. Usa Chrome o Edge recientes, o el motor Ollama.'};
+  try { const ad = await navigator.gpu.requestAdapter(); if (!ad) return {ok: false, msg: 'WebGPU está presente pero no hay una tarjeta compatible. Prueba con Ollama.'}; return {ok: true, f16: ad.features.has('shader-f16')}; }
+  catch (e) { return {ok: false, msg: 'No se pudo consultar WebGPU: ' + e.message}; }
+}
+async function cargaWebLLM(onProg) {
+  const g = await infoGPU(); if (!g.ok) throw new Error(g.msg);
+  const id = g.f16 ? 'Qwen3-4B-q4f16_1-MLC' : 'Qwen3-4B-q4f32_1-MLC';
+  const wl = await import(`https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@${WLV}/+esm`);
+  LOC.eng = await wl.CreateMLCEngine(id, {initProgressCallback: r => onProg(r.progress, r.text)});
+  LOC.id = id; LOC.listo = true;
+}
+async function chatWebLLM(msgs, schema) {
+  const m2 = msgs.map((m, i) => i === msgs.length - 1 && m.role === 'user' ? {...m, content: m.content + ' /no_think'} : m);
+  const body = {messages: m2, temperature: 0.7, top_p: 0.8, max_tokens: 1200, stream: false, extra_body: {enable_thinking: false}, response_format: {type: 'json_object', schema: JSON.stringify(schema)}};
+  let r;
+  try { r = await LOC.eng.chat.completions.create(body); }
+  catch (e) { delete body.response_format; r = await LOC.eng.chat.completions.create(body); }
+  return r.choices[0].message.content;
+}
+async function chatOllama(msgs, schema) {
+  const o = S.ollama;
+  const r = await fetch(o.url.replace(/\/$/, '') + '/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model: o.modelo, messages: msgs, stream: false, think: false, format: schema, options: {temperature: 0.7, top_p: 0.8, num_predict: 1200}})});
+  if (!r.ok) throw new Error('Ollama respondió ' + r.status + '. Comprueba que el modelo «' + o.modelo + '» está descargado.');
+  return (await r.json()).message?.content;
+}
+function localListo() { return S.motor === 'ollama' ? !!S.ollama.ok : LOC.listo; }
+async function llmLocalJSON(msgs, schema) {
+  for (let k = 0; k < 2; k++) {
+    const tx = String((S.motor === 'ollama' ? await chatOllama(msgs, schema) : await chatWebLLM(msgs, schema)) || '').replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const j = parseJ(tx); if (j && typeof j === 'object') return j;
+  }
+  throw new Error('El modelo local no devolvió JSON válido');
+}
+
+/* ── tareas: prompt, esquema, validación por código y acierto frente a la verdad conocida ── */
+const SYS = 'Eres un asistente de investigación riguroso. Respondes SOLO con JSON válido, sin texto antes ni después. Usas únicamente lo que dice el texto.';
+const DISENOS = ['ECA', 'cohortes', 'transversal', 'casos y controles', 'revisión sistemática'];
+const KW = {ECA: /aleatori/i, cohortes: /cohorte/i, transversal: /transversal/i, 'casos y controles': /casos y controles/i, 'revisión sistemática': /revisi[oó]n sistem/i};
+const sch = (props, req) => ({type: 'object', properties: props, required: req || Object.keys(props)});
+const mismos = (a, b) => a.length === b.length && [...a].sort().every((x, i) => x === [...b].sort()[i]);
+const TAREAS = {
+  t1: {nombre: 'Anonimizar entrevistas', corto: 'Anonimizar', items: ITEMS.ent, escala: false,
+    desc: 'Primero el código enmascara correos, DNI y teléfonos con expresiones regulares; después el modelo sustituye nombres de personas y lugares. El código busca fugas.',
+    entrada: it => scrub(it.texto).t,
+    prompt: (it, t) => `Sustituye en el texto los nombres de personas por [PERSONA_1], [PERSONA_2]… (la misma persona, la misma etiqueta) y los nombres de lugares, localidades y centros por [LUGAR_1], [LUGAR_2]… Conserva todo lo demás tal cual, sin resumir. No toques los marcadores que ya aparecen entre corchetes. Devuelve {"texto":"…"}.\n\nTEXTO:\n${t}`,
+    schema: sch({texto: {type: 'string'}}),
+    valida(raw, it, t) {
+      const f = [], out = String(raw?.texto ?? ''); if (!out) return {ok: false, fallos: ['No devolvió texto']};
+      const no = ' ' + norm(out) + ' ';
+      const fugas = (it.pii_list || []).filter(s => no.includes(' ' + norm(s) + ' '));
+      if (fugas.length) f.push('Fuga de datos: ' + fugas.join(', '));
+      if (cuentaPII(out)) f.push('Quedan correos, DNI o teléfonos');
+      if (out.length < t.length * 0.6) f.push('El texto salió recortado');
+      return {ok: !f.length, fallos: f, avisos: it.pii_list ? [] : ['Sin lista de datos conocidos: revisa a mano.']};
+    },
+    acierto: (raw, it, v) => it.pii_list ? v.ok : null,
+    detalle: (raw, v) => v.ok ? 'sin fugas detectadas' : v.fallos.join('; ')},
+  t2: {nombre: 'Extraer datos del estudio a JSON', corto: 'Extraer', items: ITEMS.abs, escala: true,
+    desc: 'Diseño, tamaño muestral, población, intervención y resultado principal. El código comprueba que el número aparece en el texto, que el diseño tiene su palabra clave y que la cita es literal.',
+    entrada: it => scrub(it.texto).t,
+    prompt: (it, t) => `Extrae del resumen: diseno (uno de: ${DISENOS.join(', ')}), n (número entero de participantes; en una revisión sistemática, el número de estudios incluidos), poblacion (pocas palabras), intervencion (pocas palabras, o «ninguna»), resultado_principal (frase LITERAL copiada del resumen que contenga el resultado principal). Devuelve SOLO el JSON.\n\nRESUMEN:\n${t}`,
+    schema: sch({diseno: {enum: DISENOS}, n: {type: 'integer'}, poblacion: {type: 'string'}, intervencion: {type: 'string'}, resultado_principal: {type: 'string'}}),
+    valida(raw, it, t) {
+      const f = [];
+      if (!DISENOS.includes(raw?.diseno)) f.push('Diseño fuera de la lista'); else if (!KW[raw.diseno].test(t)) f.push(`El resumen no dice «${raw.diseno}»`);
+      if (!Number.isInteger(raw?.n) || raw.n <= 0) f.push('n no es un entero positivo'); else if (!numsDe(t).has(String(raw.n))) f.push(`El número ${raw.n} no aparece en el resumen`);
+      if (!String(raw?.poblacion || '').trim() || !String(raw?.intervencion || '').trim()) f.push('Falta población o intervención');
+      if (!esFiel(t, raw?.resultado_principal || '')) f.push('La cita del resultado no es literal');
+      return {ok: !f.length, fallos: f};
+    },
+    acierto: (raw, it) => it.truth ? raw?.diseno === it.truth.diseno && raw?.n === it.truth.n : null,
+    detalle: raw => raw ? `${raw.diseno} · n=${raw.n} · ${raw.intervencion}` : '—'},
+  t3: {nombre: 'Cribar títulos y resúmenes', corto: 'Cribar', items: ITEMS.abs, escala: true,
+    desc: 'Decide incluir o excluir según tus criterios y cita la frase en que se apoya. El código comprueba la cita y deja pasar a revisión los «dudoso».',
+    entrada: it => scrub(it.texto).t,
+    prompt: (it, t) => `Criterios de cribado: ${S.crit}\n\nDecide si el resumen se incluye. Devuelve {"decision":"incluir"|"excluir"|"dudoso","motivo":"una frase","cita":"frase LITERAL del resumen en que te apoyas"}.\n\nRESUMEN:\n${t}`,
+    schema: sch({decision: {enum: ['incluir', 'excluir', 'dudoso']}, motivo: {type: 'string'}, cita: {type: 'string'}}),
+    valida(raw, it, t) {
+      const f = [];
+      if (!['incluir', 'excluir', 'dudoso'].includes(raw?.decision)) f.push('Decisión no válida'); else if (raw.decision === 'dudoso') f.push('El modelo no decide («dudoso»)');
+      if (!esFiel(t, raw?.cita || '')) f.push('La cita no es literal');
+      return {ok: !f.length, fallos: f};
+    },
+    acierto: (raw, it) => it.truth ? raw?.decision === (it.truth.incluir ? 'incluir' : 'excluir') : null,
+    detalle: raw => raw ? `${raw.decision}: ${raw.motivo}` : '—'},
+  t4: {nombre: 'Codificación cualitativa preliminar', corto: 'Codificar', items: ITEMS.ent, escala: true,
+    desc: 'Asigna códigos del libro de códigos a cada fragmento, con cita literal. Para escalar a la API hace falta la versión anonimizada del fragmento (tarea 1) sin fugas.',
+    entrada: it => it.texto,
+    entradaApi: it => { const r = S.res.t1[it.id]; return r && r.final.v.ok ? r.final.raw.texto : null; },
+    prompt: (it, t) => `Libro de códigos:\n${codigosTxt(CODIGOS())}\n\nAsigna al fragmento todos los códigos que correspondan, cada uno con una cita LITERAL del fragmento (de 5 a 25 palabras). Si no corresponde ninguno, devuelve una lista vacía. Devuelve {"codigos":[{"codigo":"…","cita":"…"}]}.\n\nFRAGMENTO:\n${t}`,
+    schema: sch({codigos: {type: 'array', items: sch({codigo: {type: 'string'}, cita: {type: 'string'}})}}),
+    valida(raw, it, t) {
+      const f = [], cs = CODIGOS(); if (!Array.isArray(raw?.codigos)) return {ok: false, fallos: ['Falta la lista de códigos']};
+      raw.codigos.forEach(c => { if (!cs[String(c.codigo).toUpperCase()]) f.push(`Código «${c.codigo}» fuera del libro`); if (!esFiel(t, c.cita || '')) f.push(`Cita no literal en ${c.codigo}`); });
+      if (!raw.codigos.length) f.push('No asignó ningún código');
+      return {ok: !f.length, fallos: f};
+    },
+    acierto: (raw, it) => it.truth ? mismos([...new Set((raw?.codigos || []).map(c => String(c.codigo).toUpperCase()))], it.truth.codigos) : null,
+    detalle: raw => raw?.codigos ? raw.codigos.map(c => c.codigo).join(', ') || '(ninguno)' : '—'}
+};
+const T5 = {
+  prompt: datos => `Escribe una síntesis narrativa de 100 a 150 palabras de estos estudios. Cada afirmación lleva entre corchetes el id del estudio, por ejemplo [E03]. Usa solo los datos del JSON: no calcules totales ni añadas cifras. Devuelve {"sintesis":"…","estudios_citados":["E01"]}.\n\nESTUDIOS:\n${JSON.stringify(datos)}`,
+  valida(raw, datos) {
+    const f = [], ids = new Set(datos.map(d => d.id)), tx = String(raw?.sintesis || '');
+    if (!tx) return {ok: false, fallos: ['No devolvió síntesis']};
+    const citados = [...new Set(tx.match(/E\d\d/g) || [])];
+    if (!citados.length) f.push('No cita ningún estudio');
+    const raros = citados.filter(c => !ids.has(c)); if (raros.length) f.push('Cita estudios que no están en la entrada: ' + raros.join(', '));
+    const nuevos = numerosNuevos(tx, JSON.stringify(datos)); if (nuevos.length) f.push('Cifras que no están en los datos: ' + nuevos.join(', '));
+    return {ok: !f.length, fallos: f};
+  }
+};
+function datosSintesis() {
+  return ITEMS.abs().filter(a => { const r3 = S.res.t3[a.id], r2 = S.res.t2[a.id]; return r3 && r2 && r3.final.raw?.decision === 'incluir' && r2.final.raw; })
+    .map(a => { const r = S.res.t2[a.id].final.raw; return {id: a.id, diseno: r.diseno, n: r.n, intervencion: r.intervencion, resultado: r.resultado_principal}; });
+}
+
+/* ── ejecución: local → validación → (API | revisión humana). El ejemplo recorre el mismo camino con salidas precalculadas ── */
+function evalua(T, it, txt, raw, err, ms, prompt) {
+  const v = err ? {ok: false, fallos: [err]} : T.valida(raw, it, txt);
+  return {raw, v, ms, tIn: estTok(SYS + prompt), tOut: estTok(JSON.stringify(raw ?? '')), ac: err ? false : T.acierto(raw, it, v)};
+}
+async function obtenLocal(tk, T, it, txt) {
+  const prompt = T.prompt(it, txt), t0 = performance.now();
+  if (S.esEjemplo) { const raw = EJEMPLO_RAW.local[tk][it.id]; return evalua(T, it, txt, raw, null, EJEMPLO_RAW.msL[tk + ':' + it.id], prompt); }
+  let raw = null, err = null;
+  try { raw = await llmLocalJSON([{role: 'system', content: SYS}, {role: 'user', content: prompt}], T.schema); } catch (e) { err = e.message; }
+  return evalua(T, it, txt, raw, err, performance.now() - t0, prompt);
+}
+async function obtenApi(tk, T, it, txt) {
+  const prompt = T.prompt(it, txt), t0 = performance.now();
+  if (S.esEjemplo) { const raw = EJEMPLO_RAW.api[tk]?.[it.id]; if (!raw) return null; return evalua(T, it, txt, raw, null, EJEMPLO_RAW.msA[tk + ':' + it.id], prompt); }
+  if (!pideClave()) return null;
+  const sc = scrub(txt); if (!(await pideEnvio(sc.t, sc.n))) return null;
+  let raw = null, err = null;
+  try { raw = await llmJSON([{role: 'system', content: SYS}, {role: 'user', content: T.prompt(it, sc.t)}], {max: 1500}); } catch (e) { err = e.message; }
+  await guardaYa();
+  return evalua(T, it, sc.t, raw, err, performance.now() - t0, prompt);
+}
+async function corre(tk, it) {
+  const T = TAREAS[tk], txt = T.entrada(it), rec = {local: await obtenLocal(tk, T, it, txt), api: null};
+  rec.final = {via: 'local', raw: rec.local.raw, v: rec.local.v, ac: rec.local.ac};
+  if (!rec.local.v.ok) {
+    let api = null;
+    if (T.escala && (S.esEjemplo || S.escala)) { const txtApi = T.entradaApi ? T.entradaApi(it) : txt; if (txtApi) api = await obtenApi(tk, T, it, txtApi); }
+    if (api) { rec.api = api; rec.final = {via: 'local→api', raw: api.raw, v: api.v, ac: api.ac}; }
+    else rec.final = {via: 'local→revisión', raw: rec.local.raw, v: rec.local.v, ac: null};
+  }
+  S.res[tk][it.id] = rec; return rec;
+}
+async function ejecutaTarea(tk, uno) {
+  if (ocupado) return;
+  if (S.esEjemplo) { S.esEjemplo = false; S.res = vacioRes(); toast('Se ha borrado el ejemplo'); }
+  if (!localListo()) { toast('Primero carga el modelo local'); go(1); return; }
+  ocupado = true; $('btnStop').disabled = false;
+  try {
+    const lista = TAREAS[tk].items(); if (!lista.length) return toast('No hay material para esta tarea');
+    const pend = lista.filter(i => !S.res[tk][i.id]), its = uno ? [pend[0] || lista[0]] : lista;
+    let k = 0;
+    for (const it of its) {
+      if (parar) break; $('progTxt').textContent = `${TAREAS[tk].corto}: ${++k} de ${its.length} (${it.id})…`;
+      await corre(tk, it); guarda(); pintaTareas(); await sleep(0);
+    }
+    $('progTxt').textContent = parar ? 'Detenido.' : `${TAREAS[tk].corto}: terminado.`;
+  } catch (e) { toast(e.message, 7000); $('progTxt').textContent = e.message; }
+  finally { ocupado = false; $('btnStop').disabled = true; await guardaYa(); pintaTareas(); }
+}
+async function ejecutaTodo() { for (const tk of ['t1', 't2', 't3', 't4']) { if (parar) break; await ejecutaTarea(tk, false); } }
+async function sintetiza() {
+  if (ocupado) return;
+  const datos = datosSintesis(); if (!datos.length) return toast('Necesitas estudios incluidos con datos extraídos (tareas 2 y 3)');
+  let raw = null, err = null, ms = 0; const prompt = T5.prompt(datos);
+  if (S.esEjemplo) { raw = EJEMPLO_RAW.sint; ms = EJEMPLO_RAW.msA.t5; }
+  else {
+    if (!pideClave()) return;
+    const sc = scrub(JSON.stringify(datos)); if (!(await pideEnvio(sc.t, sc.n))) return;
+    ocupado = true; $('progTxt').textContent = 'Sintetizando con la API…'; const t0 = performance.now();
+    try { raw = await llmJSON([{role: 'system', content: SYS}, {role: 'user', content: prompt}], {max: 1500}); } catch (e) { err = e.message; }
+    ms = performance.now() - t0; ocupado = false;
+  }
+  const v = err ? {ok: false, fallos: [err]} : T5.valida(raw, datos);
+  S.res.t5 = {raw, v, ms, tIn: estTok(SYS + prompt), tOut: estTok(JSON.stringify(raw ?? '')), n: datos.length, ids: datos.map(d => d.id)};
+  await guardaYa(); pintaTareas(); $('progTxt').textContent = v.ok ? 'Síntesis terminada.' : 'La síntesis no pasó la validación.';
+}
+async function cargaEjemplo() {
+  S.mat = 'ficticio'; S.esEjemplo = true; S.res = vacioRes(); ocupado = true;
+  try { for (const tk of ['t1', 't2', 't3', 't4']) for (const it of TAREAS[tk].items()) await corre(tk, it); } finally { ocupado = false; }
+  await sintetiza(); await guardaYa(); go(4); toast('Ejemplo con salidas precalculadas: no se ha usado ningún modelo');
+}
+
+/* ── aviso previo al envío a la API ── */
+let envioRes = null;
+function pideEnvio(textoEnviado, masks) {
+  if (S.envioOK) return Promise.resolve(true);
+  $('envioInfo').innerHTML = `<p class="sub" style="margin-top:0">Se enviarán unos ${nf(textoEnviado.length)} caracteres a ${PROV[getProv()].n}. Se han enmascarado ${masks} dato(s) personales con expresiones regulares: los nombres propios no se detectan por código.</p><p class="help">Muestra del envío:</p>`;
+  $('envioTxt').textContent = textoEnviado.slice(0, 3000) + (textoEnviado.length > 3000 ? '\n…' : '');
+  $('envioOk').checked = false; $('envioSi').disabled = true; $('mEnvio').classList.add('on');
+  return new Promise(r => { envioRes = r; });
+}
+function cierraEnvio(v) { $('mEnvio').classList.remove('on'); if (envioRes) { const r = envioRes; envioRes = null; if (v) S.envioOK = true; r(v); } }
+_cierres.mEnvio = () => cierraEnvio(false);
+$('envioOk').onchange = () => { $('envioSi').disabled = !$('envioOk').checked; };
+$('envioSi').onclick = () => cierraEnvio(true); $('envioNo').onclick = () => cierraEnvio(false);
+
+/* ── pantalla 0 ── */
+function pintaInicio() { const n = ['t1', 't2', 't3', 't4'].reduce((a, k) => a + Object.keys(S.res[k] || {}).length, 0); $('inicioProj').innerHTML = n ? `Tienes resultados guardados en este navegador. <button class="btn btn-ghost btn-sm" id="btnCont" type="button">Ver la comparativa</button>` : ''; }
+$('btnStart').onclick = () => go(1);
+$('btnEjemplo').onclick = () => { if (!ocupado) cargaEjemplo(); };
+document.addEventListener('click', e => { if (e.target.id === 'btnCont') go(4); });
+
+/* ── pantalla 1: modelo ── */
+const setLoc = (t, p) => { $('locEstado').textContent = t; const b = $('locProg'); if (p == null) b.hidden = true; else { b.hidden = false; b.value = p; } };
+async function pintaModelo() {
+  $('selMotor').value = S.motor; $('cardWeb').hidden = S.motor !== 'webllm'; $('cardOll').hidden = S.motor !== 'ollama';
+  $('ollUrl').value = S.ollama.url; $('ollMod').value = S.ollama.modelo;
+  setLoc(LOC.listo ? `Modelo cargado: ${LOC.id}.` : 'Modelo sin cargar.', null);
+  const g = await infoGPU(); $('gpuInfo').textContent = g.ok ? `WebGPU disponible${g.f16 ? ' con shader-f16 (se usará la variante de 16 bits, más ligera)' : ' sin shader-f16 (se usará la variante de 32 bits)'}.` : g.msg;
+}
+$('selMotor').onchange = () => { S.motor = $('selMotor').value; guarda(); pintaModelo(); };
+$('ollUrl').oninput = () => { S.ollama.url = $('ollUrl').value.trim(); S.ollama.ok = false; guarda(); };
+$('ollMod').oninput = () => { S.ollama.modelo = $('ollMod').value.trim(); S.ollama.ok = false; guarda(); };
+$('btnCarga').onclick = async () => {
+  if (ocupado) return; ocupado = true; $('btnCarga').disabled = true; setLoc('Preparando…', 0);
+  try { await cargaWebLLM((p, t) => setLoc(t || 'Cargando…', p)); setLoc(`Modelo cargado: ${LOC.id}.`, null); toast('Qwen3-4B listo'); }
+  catch (e) { setLoc(e.message, null); toast(e.message, 8000); }
+  finally { ocupado = false; $('btnCarga').disabled = false; }
+};
+$('btnPrueba').onclick = async () => {
+  if (!localListo()) return toast('Primero carga el modelo');
+  const t0 = performance.now(); setLoc('Probando…', null);
+  try { const r = await llmLocalJSON([{role: 'system', content: SYS}, {role: 'user', content: 'Explica en una frase qué es la presión arterial. Devuelve {"respuesta":"…"}'}], sch({respuesta: {type: 'string'}})); setLoc(`${r.respuesta} (${((performance.now() - t0) / 1000).toFixed(1)} s)`, null); }
+  catch (e) { setLoc(e.message, null); }
+};
+$('btnOll').onclick = async () => {
+  const st = $('ollEstado'); st.textContent = 'Conectando…';
+  try { const r = await fetch(S.ollama.url.replace(/\/$/, '') + '/api/tags'); if (!r.ok) throw new Error('Respuesta ' + r.status); const l = ((await r.json()).models || []).map(m => m.name);
+    S.ollama.ok = l.some(n => n === S.ollama.modelo || n.startsWith(S.ollama.modelo.split(':')[0] + ':') && S.ollama.modelo.indexOf(':') < 0);
+    st.textContent = S.ollama.ok ? `Conectado. Modelos disponibles: ${l.join(', ')}.` : `Conectado, pero no encuentro «${S.ollama.modelo}». Modelos: ${l.join(', ') || 'ninguno'}.`; }
+  catch (e) { S.ollama.ok = false; st.textContent = 'No se pudo conectar: ' + e.message + '. Revisa la dirección y OLLAMA_ORIGINS.'; }
+  guarda();
+};
+
+/* ── pantalla 2: material ── */
+function pintaMaterial() {
+  $('selMat').value = S.mat; $('matFic').hidden = !esFic(); $('matProp').hidden = esFic();
+  $('propAbs').value = S.propios.abs; $('propEnt').value = S.propios.ent;
+  $('critTxt').value = esFic() ? DATOS.criterios : S.crit; $('critTxt').readOnly = esFic();
+  $('codTxt').value = esFic() ? codigosTxt(DATOS.codigos) : S.cod; $('codTxt').readOnly = esFic();
+  const A = ITEMS.abs(), E = ITEMS.ent();
+  $('matResumen').textContent = `Material ficticio creado para esta demo: ${DATOS.abstracts.length} resúmenes y ${DATOS.entrevistas.length} fragmentos de entrevista con la respuesta correcta conocida. No son datos ni referencias reales.`;
+  $('matLista').innerHTML = [...A, ...E].map(x => `<tr><td><b>${esc(x.id)}</b></td><td>${esc(x.texto.slice(0, 160))}${x.texto.length > 160 ? '…' : ''}</td></tr>`).join('') || '<tr><td colspan="2" class="empty">Aún no hay material.</td></tr>';
+}
+$('selMat').onchange = () => { S.mat = $('selMat').value; if (!S.cod) S.cod = codigosTxt(DATOS.codigos); guarda(); pintaMaterial(); };
+$('propAbs').oninput = e => { S.propios.abs = e.target.value; guarda(); };
+$('propEnt').oninput = e => { S.propios.ent = e.target.value; guarda(); };
+$('critTxt').oninput = e => { if (!esFic()) { S.crit = e.target.value; guarda(); } };
+$('codTxt').oninput = e => { if (!esFic()) { S.cod = e.target.value; guarda(); } };
+const CAN_NEXT = i => i === 2 && !ITEMS.abs().length && !ITEMS.ent().length ? 'Añade algún texto o usa los datos ficticios' : true;
+
+/* ── pantalla 3: tareas ── */
+const chipVia = v => `<span class="fa-chip ${v === 'local' ? 'ok' : v === 'local→api' ? 'aviso' : 'error'}">${v}</span>`;
+function pintaTareas() {
+  $('chkEscala').checked = S.escala; $('avisoEj').innerHTML = S.esEjemplo ? '<div class="aviso">Estás viendo un ejemplo con salidas precalculadas: no se ha usado ningún modelo. Al ejecutar una tarea se borra.</div>' : '';
+  let h = '';
+  for (const tk of ['t1', 't2', 't3', 't4']) {
+    const T = TAREAS[tk], its = T.items(), hechos = its.filter(i => S.res[tk][i.id]).length;
+    h += `<div class="card"><h3>${esc(T.nombre)} <span class="fa-chip">${hechos} de ${its.length}</span></h3><p class="help">${esc(T.desc)}</p>
+      <div class="actions"><button class="btn btn-primary btn-sm" data-run="${tk}" type="button">Ejecutar</button><button class="btn btn-ghost btn-sm" data-uno="${tk}" type="button">Probar con 1</button></div>`;
+    if (hechos) h += `<div class="table-wrap"><table><thead><tr><th>Id</th><th>Ruta</th><th>Código</th><th>Verdad</th><th>Detalle</th></tr></thead><tbody>${its.filter(i => S.res[tk][i.id]).map(i => { const r = S.res[tk][i.id], f = r.final;
+      return `<tr><td><b>${esc(i.id)}</b></td><td>${chipVia(f.via)}</td><td>${r.local.v.ok ? '✓' : '⚠'}${f.via === 'local→api' ? ' → ' + (f.v.ok ? '✓' : '⚠') : ''}</td><td>${r.local.ac == null ? '—' : r.local.ac ? '✓' : '✗'}${f.via === 'local→api' && f.ac != null ? ' → ' + (f.ac ? '✓' : '✗') : ''}</td><td><small>${esc(r.local.v.ok || !r.local.v.fallos ? T.detalle(f.raw, f.v) : r.local.v.fallos.join('; ') + (f.via === 'local→api' ? ' → API: ' + T.detalle(f.raw, f.v) : ''))}</small></td></tr>`; }).join('')}</tbody></table></div>
+      <p class="help">«Código ✓» con «Verdad ✗» es un error silencioso: la validación por código no lo detecta.</p>`;
+    h += '</div>';
+  }
+  const r5 = S.res.t5, d = datosSintesis();
+  h += `<div class="card"><h3>Síntesis narrativa (API) ${r5 ? `<span class="fa-chip ${r5.v.ok ? 'ok' : 'error'}">${r5.v.ok ? 'validada' : 'con fallos'}</span>` : ''}</h3><p class="help">Tarea para la API: redactar con varios estudios. Solo recibe un JSON con los datos extraídos de los estudios incluidos (${d.length} ahora), nunca los textos originales. El código comprueba ids y cifras.</p>
+    <div class="actions"><button class="btn btn-primary btn-sm" data-run="t5" type="button">Sintetizar con la API</button></div>
+    ${r5 ? `<p>${esc(r5.raw?.sintesis || '')}</p>${r5.v.fallos.map(x => `<div class="aviso">${esc(x)}</div>`).join('')}` : ''}</div>`;
+  $('tareas').innerHTML = h;
+}
+$('tareas').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.run === 't5') return sintetiza(); parar = false; if (b.dataset.run) ejecutaTarea(b.dataset.run, false); else if (b.dataset.uno) ejecutaTarea(b.dataset.uno, true); });
+$('chkEscala').onchange = e => { S.escala = e.target.checked; guarda(); };
+$('btnTodo').onclick = () => { parar = false; ejecutaTodo(); }; $('btnStop').onclick = () => { parar = true; };
+$('btnBorra').onclick = async () => { S.res = vacioRes(); S.esEjemplo = false; await guardaYa(); pintaTareas(); $('progTxt').textContent = 'Resultados borrados.'; };
+
+/* ── pantalla 4: comparativa ── */
+function resumen() {
+  const pi = parseFloat(S.precio.i), po = parseFloat(S.precio.o), hayP = pi >= 0 && po >= 0 && S.precio.i !== '' && S.precio.o !== '';
+  const filas = ['t1', 't2', 't3', 't4'].map(tk => {
+    const rs = Object.values(S.res[tk]), n = rs.length, T = TAREAS[tk];
+    const okL = rs.filter(r => r.local.v.ok).length, conV = rs.filter(r => r.local.ac != null), acL = conV.filter(r => r.local.ac).length;
+    const sil = rs.filter(r => r.local.v.ok && r.local.ac === false).length, esc_ = rs.filter(r => r.final.via === 'local→api').length, rev = rs.filter(r => r.final.via === 'local→revisión').length;
+    const acF = rs.filter(r => r.final.ac != null && r.final.ac).length, conF = rs.filter(r => r.final.ac != null).length;
+    const msL = n ? rs.reduce((a, r) => a + r.local.ms, 0) / n : 0, api = rs.filter(r => r.api);
+    const cApi = hayP ? api.reduce((a, r) => a + (r.api.tIn * pi + r.api.tOut * po) / 1e6, 0) : null, cTodo = hayP ? rs.reduce((a, r) => a + (r.local.tIn * pi + r.local.tOut * po) / 1e6, 0) : null;
+    let ruta = '—';
+    if (n) { const pv = okL / n; ruta = tk === 't1' ? (rev ? 'Local + revisión de fugas' : 'Local') : pv >= 0.9 && !sil ? 'Local' : pv >= 0.6 ? 'Local + escalado y revisión de una muestra' : 'API'; }
+    return {tk, nombre: T.nombre, n, okL, acL, conV: conV.length, sil, conSil: conV.length > 0, esc: esc_, rev, acF, conF, msL, nApi: api.length, cApi, cTodo, ruta};
+  });
+  return {filas, hayP};
+}
+function pintaComparativa() {
+  $('precIn').value = S.precio.i; $('precOut').value = S.precio.o;
+  const {filas, hayP} = resumen(), N = filas.reduce((a, f) => a + f.n, 0);
+  if (!N) { $('comparativa').innerHTML = '<p class="empty">Aún no hay resultados. Ejecuta las tareas o pulsa «Ver un ejemplo» en la portada.</p>'; return; }
+  const ok = filas.reduce((a, f) => a + f.okL, 0), sil = filas.reduce((a, f) => a + f.sil, 0), esc_ = filas.reduce((a, f) => a + f.esc, 0), rev = filas.reduce((a, f) => a + f.rev, 0);
+  const r5 = S.res.t5;
+  $('comparativa').innerHTML = `${S.esEjemplo ? '<div class="aviso">Ejemplo con salidas precalculadas y errores introducidos a propósito: no mide ningún modelo real.</div>' : ''}
+    <h3>De ${N} llamadas, ${ok} (${Math.round(100 * ok / N)} %) quedaron resueltas en local con una salida válida</h3>
+    <p>${esc_} se escalaron a la API y ${rev} pasaron a revisión humana. Además hubo <b>${sil}</b> error(es) silencioso(s): el código dio por buena una respuesta incorrecta.</p>
+    <div class="table-wrap"><table><thead><tr><th>Tarea</th><th>N</th><th>Válidas en local</th><th>Aciertos en local*</th><th>Errores silenciosos*</th><th>A la API</th><th>A revisión</th><th>Tiempo local medio</th>${hayP ? '<th>Coste API estimado</th><th>Coste si todo fuera API</th>' : ''}<th>Ruta sugerida</th></tr></thead><tbody>
+    ${filas.map(f => `<tr><td><b>${esc(f.nombre)}</b></td><td>${f.n}</td><td>${f.okL}</td><td>${f.conV ? f.acL + ' de ' + f.conV : '—'}</td><td>${f.conSil ? f.sil : '—'}</td><td>${f.esc}</td><td>${f.rev}</td><td>${f.n ? (f.msL / 1000).toFixed(1) + ' s' : '—'}</td>${hayP ? `<td>${f.cApi.toFixed(4)}</td><td>${f.cTodo.toFixed(4)}</td>` : ''}<td>${esc(f.ruta)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="help">* Solo con los datos ficticios, donde la respuesta correcta es conocida. Con tus textos no se puede medir y salen como «—». Las rutas son una guía, no una garantía.</p>
+    <h3>Datos que salieron de tu ordenador</h3><p>${filas.reduce((a, f) => a + f.nApi, 0) + (r5 ? 1 : 0)} llamada(s) a la API con texto enmascarado (${filas.reduce((a, f) => a + f.nApi, 0)} de escalado${r5 ? ' y 1 de síntesis' : ''}). La anonimización no sale nunca: ${filas[0].n} de ${filas[0].n} en local.</p>
+    ${r5 ? `<h3>Síntesis (API)</h3><p>${esc(r5.raw?.sintesis || '')}</p>${r5.v.fallos.map(x => `<div class="aviso">${esc(x)}</div>`).join('')}` : ''}`;
+}
+$('precIn').oninput = e => { S.precio.i = e.target.value; guarda(); pintaComparativa(); };
+$('precOut').oninput = e => { S.precio.o = e.target.value; guarda(); pintaComparativa(); };
+const informeMd = () => { const {filas} = resumen(), N = filas.reduce((a, f) => a + f.n, 0), ok = filas.reduce((a, f) => a + f.okL, 0);
+  return `## Resultado\nDe ${N} llamadas, ${ok} se resolvieron en local con salida válida${S.esEjemplo ? ' (ejemplo con salidas precalculadas)' : ''}.\n\n## Tareas\n${filas.map(f => `- **${f.nombre}**: ${f.n} elementos; válidas en local ${f.okL}; aciertos ${f.conV ? f.acL + ' de ' + f.conV : 'sin verdad conocida'}; errores silenciosos ${f.conSil ? f.sil : 'sin medir'}; a la API ${f.esc}; a revisión ${f.rev}. Ruta sugerida: ${f.ruta}.`).join('\n')}\n\n## Límites\nLos datos de demostración son ficticios. Las rutas son una guía, no una garantía; repite la prueba con una muestra de tus datos.${S.res.t5 ? '\n\n## Síntesis (API)\n' + S.res.t5.raw?.sintesis : ''}`; };
+$('btnWord').onclick = async () => { if (!Object.values(S.res.t1).length && !Object.values(S.res.t2).length) return toast('Aún no hay resultados'); try { dl('localia.docx', await wordDeMarkdown(informeMd(), {titulo: APP_NAME, subtitulo: new Date().toLocaleDateString('es-ES'), pie: 'Generado con ' + APP_NAME + '. La IA propone; la validación la hace el código.'})); } catch (e) { toast(e.message, 7000); } };
+$('btnCsv').onclick = () => { const filas = []; for (const tk of ['t1', 't2', 't3', 't4']) for (const [id, r] of Object.entries(S.res[tk])) filas.push([tk, id, r.final.via, r.local.v.ok ? 'sí' : 'no', r.local.ac == null ? '' : r.local.ac ? 'sí' : 'no', Math.round(r.local.ms), r.api ? 'sí' : 'no', r.local.v.fallos.join(' | ')]);
+  if (!filas.length) return toast('Aún no hay resultados'); dl('localia.csv', csvDe(['tarea', 'id', 'ruta', 'valida_en_local', 'acierto_local', 'ms_local', 'llamo_a_api', 'fallos'], filas), 'text/csv;charset=utf-8'); };
+$('btnJson').onclick = () => { if (!Object.values(S.res.t2).length && !Object.values(S.res.t1).length) return toast('Aún no hay resultados'); dl('localia.json', JSON.stringify({app: APP_NAME, version: '1.0', modelo_local: LOC.id || 'Qwen3-4B', motor: S.motor, ejemplo: S.esEjemplo, criterios: esFic() ? DATOS.criterios : S.crit, resultados: S.res}, null, 1), 'application/json'); };
+
+/* ── arranque ── */
+(async () => { const p = await cargaEstado(); if (p) { S = {...S, ...p, res: {...vacioRes(), ...(p.res || {})}}; S.ollama = {...S.ollama, ...(p.ollama || {})}; } if (!S.cod) S.cod = codigosTxt(DATOS.codigos); iniciaUI(); go(0); })();
+
+</script>
+</body></html>
