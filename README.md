@@ -4,6 +4,8 @@ Modelo local o API: qué tarea de investigación necesita cada uno. Aplicación 
 
 **Usar la app:** https://fborrasumh.github.io/localia/
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23114706.svg)](https://doi.org/10.5281/zenodo.23114706)
+
 ## Qué hace
 
 - Ejecuta Qwen3-4B en el navegador (WebLLM con WebGPU) o en el equipo con Ollama, y lo prueba en cuatro tareas de investigación: anonimizar fragmentos de entrevista, extraer datos de resúmenes a JSON, cribar títulos y resúmenes y codificar texto cualitativo.
@@ -38,7 +40,7 @@ ORCID: Fernando Borrás Rocher [0000-0002-5519-4573](https://orcid.org/0000-0002
 
 ## Cómo citar
 
-Borrás Rocher, F. (2026). *LocalIA* (v1.0.0) [Software]. (DOI en trámite)
+Borrás Rocher, F. (2026). *LocalIA* (v1.0.0) [Software]. DOI: [10.5281/zenodo.23114706](https://doi.org/10.5281/zenodo.23114706)
 
 ## Licencia
 
